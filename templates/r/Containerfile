@@ -1,0 +1,28 @@
+{% macro container_string(value) -%}
+"{{ value | string | replace("\\", "\\\\") | replace("\"", "\\\"") | replace("\n", " ") }}"
+{%- endmacro %}
+# syntax=docker/dockerfile:1
+
+FROM rocker/r-ver:@@R_CONTAINER_VERSION@@ AS builder
+WORKDIR /build
+
+COPY DESCRIPTION NAMESPACE README.md ./
+COPY R ./R
+COPY man ./man
+{% if licensing.license %}COPY LICENSE ./LICENSE
+{% endif %}RUN R CMD build . && mv *.tar.gz /tmp/package.tar.gz
+
+FROM rocker/r-ver:@@R_CONTAINER_VERSION@@ AS runtime
+
+LABEL org.opencontainers.image.title={{ container_string((project_name or project_slug)) }} \
+      org.opencontainers.image.version={{ container_string((versioning.version or "0.1.0")) }} \
+      org.opencontainers.image.description={{ container_string(project_short_description) }}{% if urls.repository %} \
+      org.opencontainers.image.source={{ container_string(urls.repository) }}{% endif %}{% if urls.homepage %} \
+      org.opencontainers.image.url={{ container_string(urls.homepage) }}{% endif %}{% if urls.documentation %} \
+      org.opencontainers.image.documentation={{ container_string(urls.documentation) }}{% endif %}
+
+COPY --from=builder /tmp/package.tar.gz /tmp/package.tar.gz
+RUN R CMD INSTALL /tmp/package.tar.gz && rm /tmp/package.tar.gz
+
+USER 10001
+CMD ["Rscript", "-e", "cat({{ project_slug }}::process_text('ready'), '\\n')"]

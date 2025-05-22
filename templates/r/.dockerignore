@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+renv/library
+renv/staging
+*.Rcheck
+*.tar.gz
+build
+dist
+docs/build
+site
+*.sif

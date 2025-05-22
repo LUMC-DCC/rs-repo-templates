@@ -1,0 +1,322 @@
+{% set python_runtime = namespace(version_constraint=">=3.12") %}
+{% macro toml_string(value) -%}
+"{{ value | string | replace("\\", "\\\\") | replace("\"", "\\\"") }}"
+{%- endmacro %}
+{% macro person_name(person) %}
+{% if person.name is defined and person.name %}
+{{ person.name }}
+{% else %}
+{% set given_names = person.given_names if person.given_names is defined else "" %}
+{% set family_names = person.family_names if person.family_names is defined else "" %}
+{{ (given_names ~ " " ~ family_names) | trim or "Project member" }}
+{% endif %}
+{% endmacro %}
+{% for programming_language in programming_languages.entries %}
+{% if programming_language.name is defined and programming_language.name | lower == "python" and programming_language.version_constraint is defined and programming_language.version_constraint %}
+{% set python_runtime.version_constraint = programming_language.version_constraint %}
+{% endif %}
+{% endfor %}
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = {{ toml_string(project_slug | replace('_', '-')) }}
+version = {{ toml_string((versioning.version or "0.1.0")) }}
+description = {{ toml_string(project_short_description) }}
+readme = "README.md"
+requires-python = {{ toml_string(python_runtime.version_constraint) }}
+{% set maintainers = namespace(entries=[]) %}
+{% set authors = namespace(entries=[]) %}
+{% for contributor in contributors.entries %}
+{% if "Original author" in contributor.roles or "Co-author" in contributor.roles %}
+{% set _ = authors.entries.append(contributor) %}
+{% endif %}
+{% if "Maintainer" in contributor.roles %}
+{% set _ = maintainers.entries.append(contributor) %}
+{% endif %}
+{% endfor %}
+{% if authors.entries %}
+authors = [
+{% for author in authors.entries %}  { name = {{ toml_string(person_name(author) | trim) }}{% if author.email is defined and author.email %}, email = {{ toml_string(author.email) }}{% endif %} }{% if not loop.last %},{% endif %}
+{% endfor %}]
+{% endif %}
+{% if maintainers.entries %}
+maintainers = [
+{% for maintainer in maintainers.entries %}  { name = {{ toml_string(person_name(maintainer) | trim) }}{% if maintainer.email is defined and maintainer.email %}, email = {{ toml_string(maintainer.email) }}{% endif %} }{% if not loop.last %},{% endif %}
+{% endfor %}]
+{% endif %}
+{% set interface_types = namespace(values=[]) %}
+{% for interface in interfaces.entries %}
+{% if interface.type is defined and interface.type %}
+{% set _ = interface_types.values.append(interface.type) %}
+{% endif %}
+{% endfor %}
+{% set include_api_adapter = "SPARQL endpoint" in interface_types.values or "Web API" in interface_types.values %}
+{% set include_soap_adapter = "Web service" in interface_types.values %}
+{% set include_cli_adapter = "Command-line tool" in interface_types.values %}
+{% set include_desktop_adapter = "Desktop application" in interface_types.values %}
+{% set include_plugin_adapter = "Plug-in" in interface_types.values %}
+{% set include_rdf_support = "Ontology" in interface_types.values or "SPARQL endpoint" in interface_types.values %}
+{% set include_web_adapter = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set has_http_interface = include_api_adapter or include_soap_adapter or include_web_adapter %}
+{% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
+{% set include_runtime_configuration = has_http_interface or security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
+{% set effective_formatter_tool = quality_tools.formatter if quality_tools.formatter in template_supported_choices.quality_tools.formatter else "" %}
+{% set effective_linter_tool = quality_tools.linter if quality_tools.linter in template_supported_choices.quality_tools.linter else "" %}
+{% set effective_type_checker = quality_tools.type_checker if quality_tools.type_checker in template_supported_choices.quality_tools.type_checker else "" %}
+{% set effective_project_manager = project_manager if project_manager and project_manager in template_supported_choices.project_manager else "pip" %}
+{% set include_ruff_tooling = effective_formatter_tool == "ruff" or effective_linter_tool == "ruff" %}
+{% set include_mypy_tooling = effective_type_checker == "mypy" %}
+{% set has_quality_checks = include_ruff_tooling or include_mypy_tooling %}
+{% set include_quality_extra = has_quality_checks %}
+{% set include_security_extra = "Vulnerability scanning (e.g., Snyk, Dependabot)" in security_measures.selected.entries %}
+{% set release_channels = namespace(values=[]) %}
+{% for channel in distribution_channels.entries %}
+{% set _ = release_channels.values.append(channel | lower) %}
+{% endfor %}
+{% set include_release_tooling = "pypi" in release_channels.values or "github release" in release_channels.values or "github releases" in release_channels.values or "conda-forge" in release_channels.values %}
+{% set runtime_dependencies = [] %}
+{% if include_cli_adapter %}
+{% set _ = runtime_dependencies.append("typer") %}
+{% endif %}
+{% if include_rdf_support %}
+{% set _ = runtime_dependencies.append("rdflib") %}
+{% endif %}
+{% if include_runtime_configuration %}
+{% set _ = runtime_dependencies.append("pydantic-settings") %}
+{% endif %}
+dependencies = {{ runtime_dependencies | tojson }}
+{% if keywords.entries %}
+keywords = {{ keywords.entries | tojson }}
+{% endif %}
+{% set os_classifiers = ["Programming Language :: Python :: 3"] %}
+{% for operating_system in operating_systems.entries %}
+{% set operating_system_name = operating_system.name if operating_system.name is defined else "" %}
+{% set status = operating_system.status if operating_system.status is defined else "" %}
+{% set normalized_os = operating_system_name | lower %}
+{% if operating_system_name and status in ["", "Officially supported"] %}
+{% if ("linux" in normalized_os or "ubuntu" in normalized_os) and "Operating System :: POSIX :: Linux" not in os_classifiers %}
+{% set _ = os_classifiers.append("Operating System :: POSIX :: Linux") %}
+{% endif %}
+{% if ("macos" in normalized_os or "mac os" in normalized_os or "darwin" in normalized_os) and "Operating System :: MacOS" not in os_classifiers %}
+{% set _ = os_classifiers.append("Operating System :: MacOS") %}
+{% endif %}
+{% if "windows" in normalized_os and "Operating System :: Microsoft :: Windows" not in os_classifiers %}
+{% set _ = os_classifiers.append("Operating System :: Microsoft :: Windows") %}
+{% endif %}
+{% if ("platform independent" == normalized_os or "os independent" in normalized_os or "any" == normalized_os) and "Operating System :: OS Independent" not in os_classifiers %}
+{% set _ = os_classifiers.append("Operating System :: OS Independent") %}
+{% endif %}
+{% endif %}
+{% endfor %}
+classifiers = {{ os_classifiers | tojson }}
+{% set effective_documentation_builder = documentation_builder if documentation_builder and documentation_builder in template_supported_choices.documentation_builder else "plain" %}
+
+[project.optional-dependencies]
+{% if licensing.compatibility_check == "Yes - automated tooling" and licensing.license | trim %}
+license = [
+  "licensecheck",
+]
+{% endif %}
+{% if include_api_adapter %}
+api = [
+  "fastapi",
+  "uvicorn[standard]",
+]
+{% endif %}
+{% if include_web_adapter %}
+web = [
+  "fastapi",
+  "uvicorn[standard]",
+]
+{% endif %}
+{% if include_soap_adapter %}
+soap = [
+  "a2wsgi",
+  "fastapi",
+  "lxml",
+  "spyne @ https://github.com/arskom/spyne/archive/af96bf95feb7950617640671f8aba9654f31acd3.tar.gz",
+  "uvicorn[standard]",
+]
+{% endif %}
+{% if test_types.entries %}
+{% set test_dependencies = ["pytest"] %}
+{% if include_api_adapter or include_web_adapter or include_soap_adapter %}
+{% set _ = test_dependencies.append("fastapi") %}
+{% endif %}
+{% if include_api_adapter or include_web_adapter %}
+{% set _ = test_dependencies.append("httpx") %}
+{% endif %}
+{% if "Property-based / fuzz" in test_types.entries %}
+{% set _ = test_dependencies.append("hypothesis") %}
+{% endif %}
+test = {{ test_dependencies | tojson }}
+{% endif %}
+{% if include_quality_extra %}
+{% set quality_dependencies = ["pre-commit"] %}
+{% if include_ruff_tooling %}
+{% set _ = quality_dependencies.append("ruff") %}
+{% endif %}
+{% if include_mypy_tooling %}
+{% set _ = quality_dependencies.append("mypy") %}
+{% endif %}
+quality = {{ quality_dependencies | tojson }}
+{% endif %}
+{% if include_security_extra %}
+security = [
+  "pip-audit",
+]
+{% endif %}
+{% if include_release_tooling %}
+release = [
+  "build",
+  "packaging",
+  "twine",
+]
+{% endif %}
+{% if documentation_types.entries and effective_documentation_builder in ["mkdocs", "zensical", "sphinx"] %}
+{% set docs_dependencies = [] %}
+{% if effective_documentation_builder == "mkdocs" %}
+{% set _ = docs_dependencies.append("mkdocs") %}
+{% set _ = docs_dependencies.append("mkdocs-awesome-pages-plugin") %}
+{% set _ = docs_dependencies.append("mkdocs-material") %}
+{% set _ = docs_dependencies.append("pymdown-extensions") %}
+{% if "developer" in documentation_types.entries %}
+{% set _ = docs_dependencies.append("mkdocstrings[python]") %}
+{% endif %}
+{% elif effective_documentation_builder == "zensical" %}
+{% set _ = docs_dependencies.append("zensical") %}
+{% if "developer" in documentation_types.entries %}
+{% set _ = docs_dependencies.append("mkdocstrings[python]") %}
+{% endif %}
+{% elif effective_documentation_builder == "sphinx" %}
+{% set _ = docs_dependencies.append("myst-parser") %}
+{% set _ = docs_dependencies.append("sphinx") %}
+{% set _ = docs_dependencies.append("sphinx-book-theme") %}
+{% endif %}
+docs = {{ docs_dependencies | tojson }}
+{% endif %}
+{% if include_cli_adapter or has_http_interface %}
+[project.scripts]
+{% if include_cli_adapter %}
+{{ toml_string(project_slug | replace('_', '-')) }} = {{ toml_string(project_slug ~ ".adapters.cli.app:main") }}
+{% endif %}
+{% if has_http_interface %}
+{{ toml_string(project_slug | replace('_', '-') ~ "-serve") }} = {{ toml_string(project_slug ~ ".adapters.server_runner:main") }}
+{% endif %}
+{% endif %}
+{% if include_desktop_adapter %}
+[project.gui-scripts]
+{{ toml_string(project_slug | replace('_', '-') ~ "-desktop") }} = {{ toml_string(project_slug ~ ".adapters.desktop.app:main") }}
+{% endif %}
+{% if include_plugin_adapter %}
+[project.entry-points.{{ toml_string(project_slug ~ ".plugins") }}]
+example = {{ toml_string(project_slug ~ ".adapters.plugin.registry:get_plugin") }}
+{% endif %}
+{% set support_urls = [] %}
+{% for route in support_routes.entries %}
+{% if route.url is defined and route.url %}
+{% set _ = support_urls.append(route.url) %}
+{% endif %}
+{% endfor %}
+{% set funding_urls = [] %}
+{% for funding in funding.entries %}
+{% if funding.grant_url is defined and funding.grant_url %}
+{% set _ = funding_urls.append(funding.grant_url) %}
+{% endif %}
+{% endfor %}
+{% if urls.repository or urls.homepage or urls.documentation or support_urls or funding_urls or "pypi" in release_channels.values %}
+[project.urls]
+{% if urls.repository %}
+"Source Code" = {{ toml_string(urls.repository) }}
+{% endif %}
+{% if urls.homepage %}
+Homepage = {{ toml_string(urls.homepage) }}
+{% endif %}
+{% if urls.documentation %}
+Documentation = {{ toml_string(urls.documentation) }}
+{% endif %}
+{% if support_urls %}
+"Issue Tracker" = {{ toml_string(support_urls[0]) }}
+{% endif %}
+{% if "CHANGELOG.md" in community_files.entries and urls.repository.startswith("https://github.com/") %}
+Changelog = {{ toml_string(urls.repository.rstrip("/") ~ "/blob/HEAD/CHANGELOG.md") }}
+{% endif %}
+{% if "github releases" in release_channels.values and urls.repository.startswith("https://github.com/") %}
+"Release Notes" = {{ toml_string(urls.repository.rstrip("/") ~ "/releases") }}
+{% endif %}
+{% if "pypi" in release_channels.values %}
+Download = {{ toml_string("https://pypi.org/project/" ~ project_slug | replace("_", "-") ~ "/#files") }}
+{% endif %}
+{% if funding_urls %}
+Funding = {{ toml_string(funding_urls[0]) }}
+{% endif %}
+{% endif %}
+{% if include_soap_adapter %}
+
+[tool.hatch.metadata]
+allow-direct-references = true
+{% endif %}
+
+{% if test_types.entries %}
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+{% endif %}
+{% if licensing.compatibility_check == "Yes - automated tooling" and licensing.license | trim %}
+
+[tool.licensecheck]
+license = {{ toml_string(licensing.license) }}
+format = "simple"
+zero = true
+{% endif %}
+{% if include_ruff_tooling %}
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+  "B",
+  "E",
+  "F",
+  "I",
+  "SIM",
+  "UP",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+{% endif %}
+{% if include_mypy_tooling %}
+
+[tool.mypy]
+strict = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+  "fastapi.*",
+  "typer.*",
+]
+ignore_missing_imports = true
+{% endif %}
+{% if effective_project_manager == "pdm" %}
+
+[tool.pdm]
+distribution = true
+{% elif effective_project_manager == "hatch" %}
+
+[tool.hatch.envs.default]
+features = ["@@PROJECT_EXTRAS_TOML@@"]
+locked = true
+{% elif effective_project_manager == "pixi" %}
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+{{ toml_string(project_slug | replace('_', '-')) }} = { path = ".", editable = true, extras = ["@@PROJECT_EXTRAS_TOML@@"] }
+{% endif %}

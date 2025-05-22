@@ -1,0 +1,35 @@
+[project]
+site_name = {{ (project_name or project_slug) | tojson }}
+site_description = {{ project_short_description | tojson }}
+docs_dir = "docs"
+copyright = {{ ("Copyright " ~ (project_name or project_slug) ~ " contributors.") | tojson }}
+{% if urls.documentation %}
+site_url = {{ urls.documentation | tojson }}
+{% endif %}
+{% if urls.repository %}
+repo_url = {{ urls.repository | tojson }}
+repo_name = {{ urls.repository.rstrip('/').rsplit('/', 1)[-1] | tojson }}
+{% endif %}
+
+[project.theme]
+features = [
+  # Group top-level pages as sections in the left navigation.
+  "navigation.sections",
+  # Add a back-to-top button on long documentation pages.
+  "navigation.top",
+{% if urls.repository %}
+  # Link each page to its source and editing view in the repository.
+  "content.action.edit",
+  "content.action.view",
+{% endif %}
+]
+
+[project.markdown_extensions]
+# Render note, warning, tip, and similar callout blocks.
+admonition = {}
+# Add stable links to each generated heading.
+toc.permalink = true
+# Support collapsible admonitions with ??? syntax.
+"pymdownx.details" = {}
+# Improve fenced code blocks, especially inside admonitions.
+"pymdownx.superfences" = {}

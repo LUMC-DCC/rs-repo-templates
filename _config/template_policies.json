@@ -1,0 +1,136 @@
+{
+  "generic": {
+    "defaults": {
+      "project_slug": "project"
+    },
+    "field_schemas": {
+      "project_slug": {
+        "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$",
+        "description": "Use a repository-safe name: start and end with an ASCII letter or digit, with letters, digits, dots, hyphens, or underscores in between."
+      }
+    },
+    "supported_choices": {
+      "documentation_builder": [
+        "mkdocs",
+        "zensical",
+        "sphinx"
+      ],
+      "test_frameworks": [],
+      "quality_tools": {
+        "formatter": [],
+        "linter": [],
+        "type_checker": []
+      },
+      "project_manager": []
+    }
+  },
+  "python": {
+    "defaults": {
+      "project_slug": "my_awesome_project"
+    },
+    "field_schemas": {
+      "project_slug": {
+        "pattern": "^[a-z][a-z0-9_]*$",
+        "not": {
+          "enum": [
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "class",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "finally",
+            "for",
+            "from",
+            "global",
+            "if",
+            "import",
+            "in",
+            "is",
+            "lambda",
+            "nonlocal",
+            "not",
+            "or",
+            "pass",
+            "raise",
+            "return",
+            "try",
+            "while",
+            "with",
+            "yield"
+          ]
+        },
+        "description": "Use a lowercase Python identifier: start with a letter, then use lowercase letters, digits, or underscores; Python keywords are not allowed."
+      }
+    },
+    "supported_choices": {
+      "documentation_builder": [
+        "mkdocs",
+        "zensical",
+        "sphinx"
+      ],
+      "test_frameworks": [
+        "pytest"
+      ],
+      "quality_tools": {
+        "formatter": [
+          "ruff"
+        ],
+        "linter": [
+          "ruff"
+        ],
+        "type_checker": [
+          "mypy"
+        ]
+      },
+      "project_manager": [
+        "uv",
+        "poetry",
+        "pdm",
+        "hatch",
+        "pixi",
+        "pip"
+      ]
+    }
+  },
+  "r": {
+    "defaults": {
+      "project_slug": "my.awesome.project"
+    },
+    "field_schemas": {
+      "project_slug": {
+        "minLength": 2,
+        "pattern": "^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])$",
+        "description": "Use an R package name of at least two ASCII letters, digits, or dots; start with a letter and do not end with a dot."
+      }
+    },
+    "supported_choices": {
+      "documentation_builder": [
+        "pkgdown"
+      ],
+      "test_frameworks": [
+        "testthat"
+      ],
+      "quality_tools": {
+        "formatter": [
+          "styler"
+        ],
+        "linter": [
+          "lintr"
+        ],
+        "type_checker": []
+      },
+      "project_manager": [
+        "renv",
+        "rix"
+      ]
+    }
+  }
+}

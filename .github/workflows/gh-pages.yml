@@ -1,0 +1,67 @@
+name: Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '_docs/**'
+      - '_contracts/field_usage.json'
+      - '_config/template_policies.json'
+      - '_scripts/build_rsm_reference.py'
+      - '_scripts/build_copier_questions.py'
+      - '_scripts/build_field_usage_docs.py'
+      - '_scripts/maintain_repository.py'
+      - 'zensical.toml'
+      - 'poetry.lock'
+      - 'pyproject.toml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to GitHub Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.14'
+
+      - name: Install Poetry
+        run: pipx install "poetry>=2,<3"
+
+      - name: Install dependencies
+        run: poetry install --with docs --no-root
+
+      - name: Check derived documentation
+        run: poetry run python _scripts/maintain_repository.py --check
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: Build documentation
+        run: poetry run zensical build --strict
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: site
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4

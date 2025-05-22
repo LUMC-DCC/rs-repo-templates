@@ -1,0 +1,23 @@
+# Operating system and editor files
+.DS_Store
+.idea/
+
+# Python bytecode, environments, and tool caches
+__pycache__/
+*.py[cod]
+.venv/
+.cache/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+
+# Built repository documentation
+site/
+
+# Local reference and exploratory material
+misc/

@@ -1,0 +1,1 @@
+"""Shared Copier finalization support."""

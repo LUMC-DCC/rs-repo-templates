@@ -1,0 +1,34 @@
+repos:
+  # Keep repository files portable and catch unresolved Copier update conflicts.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-merge-conflict
+        args:
+          - --assume-in-merge
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+{% set effective_formatter = quality_tools.formatter if quality_tools.formatter in template_supported_choices.quality_tools.formatter else "" %}
+{% set effective_linter = quality_tools.linter if quality_tools.linter in template_supported_choices.quality_tools.linter else "" %}
+{% if effective_formatter or effective_linter %}
+  - repo: local
+    hooks:
+{% if effective_formatter == "styler" %}
+      - id: styler
+        name: Check R formatting with styler
+        entry: Rscript -e 'styler::style_pkg(dry = "fail")'
+        language: system
+        pass_filenames: false
+{% endif %}
+{% if effective_linter == "lintr" %}
+      - id: lintr
+        name: Lint R package
+        entry: Rscript -e 'lints <- lintr::lint_package(); print(lints); quit(status = length(lints) > 0L)'
+        language: system
+        pass_filenames: false
+{% endif %}
+{% endif %}

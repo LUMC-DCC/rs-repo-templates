@@ -1,0 +1,24 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: Check Python with Ruff
+        entry: poetry run ruff check .
+        language: system
+        pass_filenames: false
+      - id: ruff-format
+        name: Check Python formatting with Ruff
+        entry: poetry run ruff format --check .
+        language: system
+        pass_filenames: false
+      - id: derived-artifacts
+        name: Check derived artifacts and generator dependencies
+        entry: poetry run python _scripts/maintain_repository.py --check
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: audit-action-pins
+        name: Audit GitHub Action pins
+        entry: poetry run python _scripts/audit_action_pins.py
+        language: system
+        pass_filenames: false

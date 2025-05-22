@@ -1,0 +1,28 @@
+---
+_min_copier_version: "9.17.2"
+_answers_file: .copier-answers.yml
+_subdirectory: "templates/{{ template_type }}"
+_templates_suffix: ""
+_envops:
+  autoescape: false
+  keep_trailing_newline: true
+  lstrip_blocks: true
+  trim_blocks: true
+  undefined: jinja2.StrictUndefined
+_tasks:
+  - command:
+      - "{{ _copier_python }}"
+      - "{{ _copier_conf.src_path }}/_copier_tasks/finalize.py"
+      - "{{ _copier_conf.dst_path }}"
+      - "{{ template_type }}"
+    working_directory: "{{ _copier_conf.dst_path }}"
+_message_after_copy: |-
+  Project generated successfully.
+  Commit .copier-answers.yml so future template releases can be applied with
+  `copier update --trust`.
+_message_after_update: |-
+  Template update applied. Review the diff and resolve any conflict markers
+  before committing.
+
+---
+!include _config/copier_questions.yml

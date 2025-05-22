@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.14"
+
+      - name: Install Poetry
+        run: pipx install "poetry>=2,<3"
+
+      - name: Install dependencies
+        run: |
+          poetry install --with docs,dev --no-root
+
+      - name: Validate pre-commit configuration
+        run: poetry run pre-commit validate-config
+
+      - name: Check derived files
+        run: poetry run python _scripts/maintain_repository.py --check
+
+      - name: Audit field usage statuses
+        run: poetry run python _scripts/audit_field_usage_status.py
+
+      - name: Audit GitHub Action pins
+        run: poetry run python _scripts/audit_action_pins.py
+
+      - name: Check repository Python quality
+        run: |
+          poetry run ruff check .
+          poetry run ruff format --check .
+
+      - name: Run tests
+        run: poetry run pytest
+
+      - name: Build generated project documentation
+        run: poetry run python _scripts/check_generated_docs.py
+
+      - name: Build documentation
+        run: poetry run zensical build --strict

@@ -1,0 +1,53 @@
+[project]
+site_name = "Research Software Templates"
+site_description = "Service-agnostic Copier templates for FAIR research software"
+site_url = "https://lumc-dcc.github.io/rs-repo-templates"
+docs_dir = "_docs"
+repo_url = "https://github.com/LUMC-DCC/rs-repo-templates"
+repo_name = "LUMC-DCC/rs-repo-templates"
+edit_uri = "edit/main/_docs/"
+copyright = "Copyright Leiden University Medical Center."
+nav = [
+  { "Home" = "index.md" },
+  { "For template users" = [
+    "users/index.md",
+    "users/generated-projects.md",
+    "users/template-updates.md",
+    "users/metadata.md",
+    "users/python.md",
+    "users/r.md",
+    { "Options" = [
+      "users/options/documentation-builders.md",
+      "users/options/interface-types.md",
+    ] },
+  ] },
+  { "For service integrators" = ["integrators/index.md"] },
+  { "Context reference" = [
+    "contract/index.md",
+    "contract/rsm-fields.md",
+    "contract/field-usage.md",
+  ] },
+  { "For template developers" = ["developers/index.md"] },
+  { "Architecture" = "architecture.md" },
+]
+
+[project.theme]
+features = [
+  # Group top-level pages as sections in the left navigation.
+  "navigation.sections",
+  # Add a back-to-top button on long documentation pages.
+  "navigation.top",
+  # Link each page to its source and editing view in the repository.
+  "content.action.edit",
+  "content.action.view",
+]
+
+[project.markdown_extensions]
+# Render note, warning, tip, and similar callout blocks.
+admonition = {}
+# Add stable links to each generated heading.
+toc.permalink = true
+# Support collapsible admonitions with ??? syntax.
+"pymdownx.details" = {}
+# Improve fenced code blocks, especially inside admonitions.
+"pymdownx.superfences" = {}

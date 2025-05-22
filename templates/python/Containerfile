@@ -1,0 +1,68 @@
+{% macro container_string(value) -%}
+"{{ value | string | replace("\\", "\\\\") | replace("\"", "\\\"") | replace("\n", " ") }}"
+{%- endmacro %}
+{% set interface_types = namespace(values=[]) %}
+{% for interface in interfaces.entries %}
+{% if interface.type is defined and interface.type %}
+{% set _ = interface_types.values.append(interface.type) %}
+{% endif %}
+{% endfor %}
+{% set has_api = "SPARQL endpoint" in interface_types.values or "Web API" in interface_types.values %}
+{% set has_soap = "Web service" in interface_types.values %}
+{% set has_web = "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set has_portal = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values %}
+{% set install_extras = [] %}
+{% if has_api %}
+{% set _ = install_extras.append("api") %}
+{% endif %}
+{% if has_soap %}
+{% set _ = install_extras.append("soap") %}
+{% endif %}
+{% if has_web or has_portal %}
+{% set _ = install_extras.append("web") %}
+{% endif %}
+# syntax=docker/dockerfile:1
+
+# Build wheels separately so compilers and build tools do not enter the runtime image.
+FROM python:@@PYTHON_CONTAINER_VERSION@@-slim AS builder
+
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+WORKDIR /build
+
+COPY pyproject.toml README.md ./
+COPY src ./src
+RUN python -m pip wheel --wheel-dir /wheels ".{% if install_extras %}[{{ install_extras | join(',') }}]{% endif %}"
+
+FROM python:@@PYTHON_CONTAINER_VERSION@@-slim AS runtime
+
+LABEL org.opencontainers.image.title={{ container_string((project_name or project_slug)) }} \
+      org.opencontainers.image.version={{ container_string((versioning.version or "0.1.0")) }} \
+      org.opencontainers.image.description={{ container_string(project_short_description) }}{% if urls.repository %} \
+      org.opencontainers.image.source={{ container_string(urls.repository) }}{% endif %}{% if urls.homepage %} \
+      org.opencontainers.image.url={{ container_string(urls.homepage) }}{% endif %}{% if urls.documentation %} \
+      org.opencontainers.image.documentation={{ container_string(urls.documentation) }}{% endif %}
+
+{% if has_api or has_soap or has_web or has_portal %}
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    {{ project_slug | upper }}_SERVER_HOST=0.0.0.0 \
+    {{ project_slug | upper }}_SERVER_PORT=8000
+{% else %}
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+{% endif %}
+
+WORKDIR /app
+
+RUN adduser --disabled-password --gecos "" --uid 10001 appuser
+COPY --from=builder /wheels /wheels
+RUN python -m pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
+
+USER appuser
+{% if has_api or has_soap or has_web or has_portal %}
+EXPOSE 8000
+CMD ["{{ project_slug | replace('_', '-') }}-serve"]
+{% else %}
+CMD ["python", "-m", "{{ project_slug }}"]
+{% endif %}

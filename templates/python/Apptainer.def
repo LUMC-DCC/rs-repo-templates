@@ -1,0 +1,63 @@
+{% set interface_types = namespace(values=[]) %}
+{% for interface in interfaces.entries %}
+{% if interface.type is defined and interface.type %}
+{% set _ = interface_types.values.append(interface.type) %}
+{% endif %}
+{% endfor %}
+{% set has_api = "SPARQL endpoint" in interface_types.values or "Web API" in interface_types.values %}
+{% set has_soap = "Web service" in interface_types.values %}
+{% set has_web = "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set has_portal = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values %}
+{% set install_extras = [] %}
+{% if has_api %}
+{% set _ = install_extras.append("api") %}
+{% endif %}
+{% if has_soap %}
+{% set _ = install_extras.append("soap") %}
+{% endif %}
+{% if has_web or has_portal %}
+{% set _ = install_extras.append("web") %}
+{% endif %}
+Bootstrap: docker
+From: python:@@PYTHON_CONTAINER_VERSION@@-slim
+
+%labels
+    org.opencontainers.image.title {{ (project_name or project_slug) }}
+    org.opencontainers.image.version {{ (versioning.version or "0.1.0") }}
+    org.opencontainers.image.description {{ project_short_description }}
+{% if urls.repository %}
+    org.opencontainers.image.source {{ urls.repository }}
+{% endif %}
+{% if urls.homepage %}
+    org.opencontainers.image.url {{ urls.homepage }}
+{% endif %}
+{% if urls.documentation %}
+    org.opencontainers.image.documentation {{ urls.documentation }}
+{% endif %}
+
+%files
+    pyproject.toml /opt/project/pyproject.toml
+    README.md /opt/project/README.md
+    src /opt/project/src
+
+%post
+    python -m pip install --no-cache-dir "/opt/project{% if install_extras %}[{{ install_extras | join(',') }}]{% endif %}"
+    rm -rf /opt/project
+
+%environment
+    export PYTHONUNBUFFERED=1
+    export PYTHONDONTWRITEBYTECODE=1
+{% if has_api or has_soap or has_web or has_portal %}
+    export {{ project_slug | upper }}_SERVER_HOST=0.0.0.0
+    export {{ project_slug | upper }}_SERVER_PORT=8000
+{% endif %}
+
+%runscript
+{% if has_api or has_soap or has_web or has_portal %}
+    exec {{ project_slug | replace('_', '-') }}-serve "$@"
+{% else %}
+    exec python -m {{ project_slug }} "$@"
+{% endif %}
+
+%test
+    python -c "import {{ project_slug }}"
