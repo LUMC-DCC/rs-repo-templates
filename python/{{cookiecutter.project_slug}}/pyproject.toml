@@ -169,13 +169,18 @@ release = [
   "twine",
 ]
 {% endif %}
-{% if cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "sphinx"] %}
+{% if cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "zensical", "sphinx"] %}
 {% set docs_dependencies = [] %}
 {% if effective_documentation_builder == "mkdocs" %}
 {% set _ = docs_dependencies.append("mkdocs") %}
 {% set _ = docs_dependencies.append("mkdocs-awesome-pages-plugin") %}
 {% set _ = docs_dependencies.append("mkdocs-material") %}
 {% set _ = docs_dependencies.append("pymdown-extensions") %}
+{% if "developer" in cookiecutter.documentation_types.entries %}
+{% set _ = docs_dependencies.append("mkdocstrings[python]") %}
+{% endif %}
+{% elif effective_documentation_builder == "zensical" %}
+{% set _ = docs_dependencies.append("zensical") %}
 {% if "developer" in cookiecutter.documentation_types.entries %}
 {% set _ = docs_dependencies.append("mkdocstrings[python]") %}
 {% endif %}
@@ -313,7 +318,7 @@ ignore_missing_imports = true
 {% if include_release_tooling %}
 {% set _ = project_manager_extras.append("release") %}
 {% endif %}
-{% if cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "sphinx"] %}
+{% if cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "zensical", "sphinx"] %}
 {% set _ = project_manager_extras.append("docs") %}
 {% endif %}
 {% if effective_project_manager == "pdm" %}

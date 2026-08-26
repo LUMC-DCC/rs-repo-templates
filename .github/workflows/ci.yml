@@ -58,4 +58,4 @@ jobs:
         run: poetry run python _scripts/check_generated_docs.py
 
       - name: Build documentation
-        run: poetry run mkdocs build --strict
+        run: poetry run zensical build --strict

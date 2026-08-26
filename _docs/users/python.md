@@ -121,8 +121,8 @@ Generated user, developer, and deployment documentation also follows the
 selected interface types. The developer page describes the architecture of the
 included scaffolds, the usage page shows relevant run commands, and the
 deployment page includes only relevant runtime notes.
-The MkDocs and Sphinx scaffolds generate technical reference pages from public
-NumPy-style docstrings in the selected package modules.
+The Zensical, MkDocs, and Sphinx scaffolds generate technical reference pages
+from public NumPy-style docstrings in the selected package modules.
 
 ## Project metadata
 

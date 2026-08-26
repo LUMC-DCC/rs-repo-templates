@@ -164,6 +164,7 @@ def optional_dependency_groups(ctx):
     _, effective_builder = resolve_choice(ctx, "documentation_builder")
     if entries(ctx, "documentation_types") and effective_builder in {
         "mkdocs",
+        "zensical",
         "sphinx",
     }:
         groups.append("docs")

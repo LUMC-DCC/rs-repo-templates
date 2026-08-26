@@ -31,5 +31,5 @@ poetry run ruff check .
 poetry run ruff format --check .
 poetry run pytest
 poetry run python _scripts/check_generated_docs.py
-poetry run mkdocs build --strict
+poetry run zensical build --strict
 ```

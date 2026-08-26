@@ -85,6 +85,7 @@ def needs_python_project_setup(ctx):
     _, documentation_builder = resolve_documentation_builder(ctx)
     builds_documentation = has_documentation(ctx) and documentation_builder in {
         "mkdocs",
+        "zensical",
         "sphinx",
     }
     checks_licenses = object_value(
@@ -126,6 +127,10 @@ OPTIONAL_PATHS = [
     },
     {
         "path": "mkdocs.yml",
+        "should_remove": lambda ctx: not has_documentation(ctx),
+    },
+    {
+        "path": "zensical.toml",
         "should_remove": lambda ctx: not has_documentation(ctx),
     },
     {

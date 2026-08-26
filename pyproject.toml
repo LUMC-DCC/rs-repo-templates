@@ -9,8 +9,8 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.14,<4.0"
 dependencies = [
-    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@5bdcbcbc4383d352a1385065265f970e9fd361ea",
-    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@cb90caa88ca839f4828dada5945e70ab54730564",
+    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@5727be9bb76deaf43dff4bbc168bda4b217c63ab",
+    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@2486fd3a4d4c2bc67f5809cea6fdc02218561897",
 ]
 
 [project.urls]
@@ -36,6 +36,7 @@ sphinx = ">=8,<9"
 myst-parser = ">=4,<5"
 sphinx-book-theme = ">=1,<2"
 mkdocstrings = {version = ">=0.30,<1", extras = ["python"]}
+zensical = "^0.0.57"
 
 
 [tool.poetry.group.dev.dependencies]

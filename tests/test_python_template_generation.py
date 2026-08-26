@@ -229,13 +229,19 @@ BASE_CONTEXT = {
     "software_functions": {
         "entries": [
             {
-                "operation": [
+                "operations": [
                     {
                         "term": "Statistical data analysis",
                         "uri": "http://edamontology.org/operation_2238",
                     }
                 ],
-                "input": [
+                "topics": [
+                    {
+                        "term": "Proteomics",
+                        "uri": "http://edamontology.org/topic_0121",
+                    }
+                ],
+                "inputs": [
                     {
                         "data": {
                             "term": "Expression data",
@@ -256,7 +262,7 @@ BASE_CONTEXT = {
                         ],
                     }
                 ],
-                "output": [
+                "outputs": [
                     {
                         "data": {
                             "term": "Expression data",
@@ -791,6 +797,7 @@ def assert_selected_test_files(project_path, selected_types):
                 ".github/ISSUE_TEMPLATE",
                 "tests/test_property.py",
                 "Containerfile",
+                "zensical.toml",
                 ".zenodo.json",
                 "licenses",
             ],
@@ -829,6 +836,7 @@ def assert_selected_test_files(project_path, selected_types):
                 "codemeta.json",
                 "docs",
                 "mkdocs.yml",
+                "zensical.toml",
                 "tests",
                 "src/minimal_demo/adapters",
                 "scripts",
@@ -2277,6 +2285,7 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
                 "docs/Makefile",
                 "docs/make.bat",
                 "docs/deployment.md",
+                "zensical.toml",
             ],
             [
                 "mkdocs",
@@ -2286,6 +2295,34 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
                 "mkdocstrings[python]",
             ],
             "mkdocs build --strict",
+        ),
+        (
+            "zensical",
+            [
+                "docs/index.md",
+                "docs/overview.md",
+                "docs/resource-requirements.md",
+                "docs/sustainability.md",
+                "docs/security-and-data.md",
+                "docs/release.md",
+                "docs/functions.md",
+                "docs/usage.md",
+                "docs/developer.md",
+                "docs/reference.md",
+                "docs/documentation.md",
+                "docs/legal.md",
+                "zensical.toml",
+            ],
+            [
+                "docs/source",
+                "docs/hooks.py",
+                "docs/.pages",
+                "docs/Makefile",
+                "docs/make.bat",
+                "mkdocs.yml",
+            ],
+            ["zensical", "mkdocstrings[python]"],
+            "zensical build --strict",
         ),
         (
             "sphinx",
@@ -2314,6 +2351,7 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
                 "docs/source/index.rst",
                 "docs/source/deployment.md",
                 "mkdocs.yml",
+                "zensical.toml",
             ],
             ["myst-parser", "sphinx", "sphinx-book-theme"],
             "sphinx-build -W -b html docs/source docs/build/html",
@@ -2336,6 +2374,7 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
                 "docs/Makefile",
                 "docs/make.bat",
                 "mkdocs.yml",
+                "zensical.toml",
                 ".github/workflows/docs.yml",
             ],
             [],
@@ -2439,6 +2478,39 @@ def test_python_documentation_builder_scaffolds_are_selected(
         )
         assert build.returncode == 0, build.stdout + build.stderr
 
+    if documentation_builder == "zensical":
+        zensical_config = tomllib.loads(
+            (project_path / "zensical.toml").read_text(encoding="utf-8")
+        )["project"]
+        assert zensical_config["site_name"] == BASE_CONTEXT["project_name"]
+        assert (
+            zensical_config["site_description"]
+            == BASE_CONTEXT["project_short_description"]
+        )
+        assert zensical_config["repo_url"] == BASE_CONTEXT["urls"]["repository"]
+        assert zensical_config["theme"]["features"] == [
+            "navigation.sections",
+            "navigation.top",
+            "content.action.edit",
+            "content.action.view",
+        ]
+        assert zensical_config["plugins"]["mkdocstrings"]["handlers"]["python"][
+            "paths"
+        ] == ["src"]
+        reference = (project_path / "docs/reference.md").read_text(encoding="utf-8")
+        assert "::: zensical_docs_demo" in reference
+        assert "zensical_docs_demo.services.processing" in reference
+        contributing = (project_path / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        assert "uv run zensical build --strict" in contributing
+        build = subprocess.run(
+            ["zensical", "build", "--strict"],
+            cwd=project_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert build.returncode == 0, build.stdout + build.stderr
+
     if docs_dependencies == ["myst-parser", "sphinx", "sphinx-book-theme"]:
         sphinx_config = (project_path / "docs" / "source" / "conf.py").read_text(
             encoding="utf-8"
@@ -2497,11 +2569,43 @@ def test_python_empty_documentation_builder_uses_plain_markdown(tmp_path, monkey
     assert not (project_path / "docs" / "deployment.md").exists()
     assert not (project_path / "docs" / "conf.py").exists()
     assert not (project_path / "mkdocs.yml").exists()
+    assert not (project_path / "zensical.toml").exists()
 
     metadata = tomllib.loads((project_path / "pyproject.toml").read_text())
     optional_dependencies = metadata["project"]["optional-dependencies"]
     assert "docs" not in optional_dependencies
     assert not (project_path / ".github" / "workflows" / "docs.yml").exists()
+
+
+def test_python_zensical_supports_user_docs_without_public_urls(tmp_path, monkeypatch):
+    """Ensure minimal Zensical docs do not require repository or API metadata."""
+    project_path = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_slug="zensical_user_docs_demo",
+        documentation_builder="zensical",
+        documentation_types={"entries": ["user"]},
+        urls={"repository": "", "homepage": "", "documentation": ""},
+    )
+
+    config = tomllib.loads(
+        (project_path / "zensical.toml").read_text(encoding="utf-8")
+    )["project"]
+    assert "site_url" not in config
+    assert "repo_url" not in config
+    assert "plugins" not in config
+    assert (project_path / "docs" / "usage.md").exists()
+    assert not (project_path / "docs" / "developer.md").exists()
+    assert not (project_path / "docs" / "reference.md").exists()
+
+    build = subprocess.run(
+        ["zensical", "build", "--strict"],
+        cwd=project_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert build.returncode == 0, build.stdout + build.stderr
 
 
 def test_python_documentation_types_select_expected_pages(tmp_path, monkeypatch):
@@ -2674,6 +2778,9 @@ def test_python_shared_community_files_render_standard_content(tmp_path, monkeyp
     )
 
     contributing = (project_path / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    pull_request_template = (
+        project_path / ".github" / "pull_request_template.md"
+    ).read_text(encoding="utf-8")
     code_of_conduct = (project_path / "CODE_OF_CONDUCT.md").read_text(encoding="utf-8")
     changelog = (project_path / "CHANGELOG.md").read_text(encoding="utf-8")
     governance = (project_path / "GOVERNANCE.md").read_text(encoding="utf-8")
@@ -2688,6 +2795,11 @@ def test_python_shared_community_files_render_standard_content(tmp_path, monkeyp
     assert "Validate generated metadata files." in contributing
     assert "The branch is rebased on the target branch" in contributing
     assert "No secrets, private data, or non-public security details" in contributing
+    assert "Use a Conventional Commit pull request title" in pull_request_template
+    assert "Metadata files are updated" in pull_request_template
+    assert "Documentation is updated" in pull_request_template
+    assert "Tests cover new behavior" in pull_request_template
+    assert "Commands run:" in pull_request_template
     assert "Contributor Covenant" in code_of_conduct
     assert "Enforcement Guidelines" in code_of_conduct
     assert BASE_CONTEXT["contacts"]["code_of_conduct"] in code_of_conduct
@@ -3082,6 +3194,7 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
     assert "## Output data formats" not in docs_overview
     assert "## Functions and operations" in docs_overview
     assert "Statistical data analysis" in docs_overview
+    assert "[Proteomics](http://edamontology.org/topic_0121)" in docs_overview
     assert "Columns: sample_id, value" in docs_overview
     assert "[sample](https://example.org/data/example.csv)" in docs_overview
     assert "`research-template-demo analyse input.csv`" in docs_overview
@@ -3092,6 +3205,8 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
         "- [Statistical data analysis](http://edamontology.org/operation_2238)"
         in docs_functions
     )
+    assert "**Topics**" in docs_functions
+    assert "- [Proteomics](http://edamontology.org/topic_0121)" in docs_functions
     assert "**Inputs**" in docs_functions
     assert "[Expression data](http://edamontology.org/data_2603)" in docs_functions
     assert "Columns: sample_id, value" in docs_functions
@@ -3183,10 +3298,7 @@ def test_python_template_generates_codemeta_metadata(tmp_path, monkeypatch):
         "Web API",
         "Script",
     ]
-    assert codemeta["applicationSubCategory"] == [
-        "Data analysis",
-        "Integration & interfacing",
-    ]
+    assert codemeta["applicationSubCategory"] == ["http://edamontology.org/topic_0121"]
     assert codemeta["schema:featureList"] == ["http://edamontology.org/operation_2238"]
     assert codemeta["programmingLanguage"] == [
         {"@type": "ComputerLanguage", "name": "Python", "version": ">=3.11"},

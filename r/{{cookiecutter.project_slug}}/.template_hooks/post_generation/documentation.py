@@ -128,17 +128,21 @@ def select_documentation_builder(ctx, cwd):
     builder_root = docs_dir / "_builders"
     shared_root = docs_dir / "_shared"
     requested, effective = resolve_documentation_builder(ctx)
+    if effective in {"mkdocs", "zensical"}:
+        copy_builder_files(builder_root / "site_generator", docs_dir)
     copy_builder_files(builder_root / effective, docs_dir)
     copy_builder_files(shared_root, docs_source_dir(cwd))
     remove_path(builder_root)
     remove_path(shared_root)
     select_documentation_type_pages(ctx, cwd)
 
-    if effective not in {"mkdocs", "sphinx"}:
+    if effective not in {"mkdocs", "zensical", "sphinx"}:
         remove_path(cwd / ".github" / "workflows" / "docs.yml")
 
     if effective != "mkdocs":
         remove_path(cwd / "mkdocs.yml")
+    if effective != "zensical":
+        remove_path(cwd / "zensical.toml")
 
     if requested and requested != effective:
         print(

@@ -59,8 +59,9 @@
   "documentation_builder": [
     "",
     "mkdocs",
+    "pkgdown",
     "sphinx",
-    "pkgdown"
+    "zensical"
   ],
   "documentation_types": {
     "entries": []

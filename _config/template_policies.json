@@ -48,6 +48,7 @@
     "supported_choices": {
       "documentation_builder": [
         "mkdocs",
+        "zensical",
         "sphinx"
       ],
       "test_frameworks": [

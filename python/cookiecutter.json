@@ -59,8 +59,9 @@
   "documentation_builder": [
     "",
     "mkdocs",
+    "pkgdown",
     "sphinx",
-    "pkgdown"
+    "zensical"
   ],
   "documentation_types": {
     "entries": []
@@ -263,6 +264,7 @@
   "_template_supported_choices": {
     "documentation_builder": [
       "mkdocs",
+      "zensical",
       "sphinx"
     ],
     "test_frameworks": [

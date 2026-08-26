@@ -145,7 +145,7 @@ def software_function_label(software_function):
     """
     operations = [
         operation.get("term", "")
-        for operation in software_function.get("operation", [])
+        for operation in software_function.get("operations", [])
         if operation.get("term")
     ]
     if operations:
@@ -169,13 +169,13 @@ def build_biotools_function_block(software_function):
     """
     yaml_lines = ["# biotools-function"]
     yaml_lines.extend(
-        render_term_list_yaml("operation", software_function.get("operation", []))
+        render_term_list_yaml("operation", software_function.get("operations", []))
     )
     yaml_lines.extend(
-        render_function_io_yaml("input", software_function.get("input", []))
+        render_function_io_yaml("input", software_function.get("inputs", []))
     )
     yaml_lines.extend(
-        render_function_io_yaml("output", software_function.get("output", []))
+        render_function_io_yaml("output", software_function.get("outputs", []))
     )
     yaml_lines.extend(render_cmd_yaml(software_function.get("cmd", "")))
     if software_function.get("note"):

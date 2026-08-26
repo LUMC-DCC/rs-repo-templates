@@ -153,6 +153,7 @@ def primary_workflow(ctx):
             documentation_builder = "plain"
         if entries(ctx, "documentation_types") and documentation_builder in {
             "mkdocs",
+            "zensical",
             "sphinx",
         }:
             return "docs.yml"

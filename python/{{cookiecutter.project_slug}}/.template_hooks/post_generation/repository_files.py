@@ -12,7 +12,9 @@ from rs_files_templates import (
     CodeOfConductModel,
     ContributingModel,
     GovernanceModel,
+    IssueTemplateModel,
     LicenseModel,
+    PullRequestTemplateModel,
     SecurityModel,
     SupportModel,
     ZenodoModel,
@@ -37,7 +39,9 @@ REPOSITORY_FILE_MODELS = (
     CodeMetaModel,
     CodeOfConductModel,
     GovernanceModel,
+    IssueTemplateModel,
     LicenseModel,
+    PullRequestTemplateModel,
     SecurityModel,
     SupportModel,
     ZenodoModel,
@@ -149,6 +153,8 @@ def selected_models(ctx, spdx_identifier=None):
         for file_name, model_type in COMMUNITY_MODELS.items()
         if file_name in selected_community_files
     )
+    if "CONTRIBUTING.md" in selected_community_files:
+        models.append(model_from_context(PullRequestTemplateModel, ctx))
 
     if uses_zenodo(ctx):
         zenodo_model = model_from_context(ZenodoModel, ctx)
@@ -158,6 +164,33 @@ def selected_models(ctx, spdx_identifier=None):
         zenodo_model.licensing.license = spdx_identifier or ""
         models.append(zenodo_model)
     return models
+
+
+def render_issue_templates(ctx, cwd):
+    """Render package-owned GitHub issue forms when support is selected.
+
+    Parameters
+    ----------
+    ctx : dict
+        Rendered Cookiecutter context.
+    cwd : pathlib.Path
+        Generated project root.
+    """
+    if "SUPPORT.md" not in set(entries(ctx, "community_files")):
+        return
+
+    model = model_from_context(IssueTemplateModel, ctx)
+    target_root = cwd / ".github" / "ISSUE_TEMPLATE"
+    target_root.mkdir(parents=True, exist_ok=True)
+    for file_name, content in model.archive_entries().items():
+        # Archive entries are package-owned basenames, but reject path
+        # components defensively before writing into the repository.
+        unsafe_name = (
+            file_name in {"", ".", ".."} or "/" in file_name or "\\" in file_name
+        )
+        if unsafe_name:
+            raise ValueError(f"Unsafe issue-template filename: {file_name!r}")
+        (target_root / file_name).write_text(content, encoding="utf-8")
 
 
 def render_repository_files(ctx, cwd):
@@ -183,4 +216,5 @@ def render_repository_files(ctx, cwd):
     models = selected_models(ctx, spdx_identifier)
     if models:
         render_many(models, cwd)
+    render_issue_templates(ctx, cwd)
     return spdx_identifier

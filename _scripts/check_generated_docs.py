@@ -19,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PYTHON_TEMPLATE = ROOT / "python"
 BUILD_COMMANDS = {
     "mkdocs": [sys.executable, "-m", "mkdocs", "build", "--strict"],
+    "zensical": [sys.executable, "-m", "zensical", "build", "--strict"],
     "sphinx": [
         sys.executable,
         "-m",

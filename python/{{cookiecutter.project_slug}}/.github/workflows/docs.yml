@@ -23,6 +23,8 @@ jobs:
       - name: Build documentation
 {% if effective_documentation_builder == "mkdocs" %}
         run: @@PROJECT_RUN@@mkdocs build --strict
+{% elif effective_documentation_builder == "zensical" %}
+        run: @@PROJECT_RUN@@zensical build --strict
 {% elif effective_documentation_builder == "sphinx" %}
         run: @@PROJECT_RUN@@sphinx-build -W -b html docs/source docs/build/html
 {% endif %}

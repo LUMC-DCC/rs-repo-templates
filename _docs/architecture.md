@@ -83,8 +83,8 @@ split into actions under `post_generation/`, content assembly under
 CI regenerates Cookiecutter contexts and field-usage documentation, checks that
 synchronized copies are committed, checks Python quality, audits field
 references and immutable Action pins, renders representative projects, runs
-generated tests, builds MkDocs and Sphinx variants, and builds these repository
-docs strictly.
+generated tests, builds Zensical, MkDocs, and Sphinx variants, and builds these
+repository docs strictly.
 
 Reusable file content is tested upstream. Integration tests here may validate
 its schema-backed outputs, but should not duplicate exact prose or whitespace

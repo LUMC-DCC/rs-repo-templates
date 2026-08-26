@@ -293,7 +293,7 @@
         "docs dependency extras",
         "docs CI workflow command"
       ],
-      "notes": "Python supports Sphinx and MkDocs site generators; omitting the builder produces plain Markdown. R supports pkgdown and otherwise produces plain documentation.",
+      "notes": "Python supports Zensical, Sphinx, and MkDocs site generators; omitting the builder produces plain Markdown. R supports pkgdown and otherwise produces plain documentation.",
       "statuses": {
         "python": "implemented",
         "r": "partial"
@@ -393,9 +393,10 @@
         "README bio.tools function blocks",
         "docs functions and operations summary",
         "CodeMeta schema:featureList",
+        "CodeMeta applicationSubCategory topics",
         "CodeMeta supportingData sample nodes"
       ],
-      "notes": "Links public EDAM operations to inputs, outputs, command examples, and notes. Function inputs and outputs are the canonical source for format versions, constraints, sample URLs, and supporting-data metadata.",
+      "notes": "Links public EDAM operations and topics to inputs, outputs, command examples, and notes. Function inputs and outputs are the canonical source for format versions, constraints, sample URLs, and supporting-data metadata.",
       "statuses": {
         "python": "implemented",
         "r": "partial"

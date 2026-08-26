@@ -14,7 +14,7 @@
 {% set effective_type_checker = cookiecutter.quality_tools.type_checker if cookiecutter.quality_tools.type_checker in cookiecutter._template_supported_choices.quality_tools.type_checker else "" %}
 {% set has_quality_checks = effective_formatter_tool or effective_linter_tool or effective_type_checker %}
 {% set effective_documentation_builder = cookiecutter.documentation_builder if cookiecutter.documentation_builder and cookiecutter.documentation_builder in cookiecutter._template_supported_choices.documentation_builder else "plain" %}
-{% set has_docs_workflow = cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "sphinx"] %}
+{% set has_docs_workflow = cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "zensical", "sphinx"] %}
 {% set has_license_workflow = cookiecutter.licensing.compatibility_check == "Yes - automated tooling" and cookiecutter.licensing.license | trim %}
 {% set has_security_workflow = "Vulnerability scanning (e.g., Snyk, Dependabot)" in cookiecutter.security_measures.selected.entries %}
 {% set container_types = namespace(values=[]) %}

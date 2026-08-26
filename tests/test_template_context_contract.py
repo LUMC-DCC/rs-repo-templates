@@ -5,7 +5,6 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
-from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -76,24 +75,31 @@ def test_published_rsm_schema_is_the_public_contract():
     assert rsm_schema.raw["required"] == ["project_slug"]
 
 
-def test_every_packaged_repository_file_is_integrated():
-    """Ensure every bundled reusable template has a generator model."""
+def test_reusable_repository_file_models_are_integrated():
+    """Ensure every reusable repository-file model is wired into generation."""
     sys.path.insert(0, str(TEMPLATE_HOOKS))
     try:
         from post_generation.repository_files import REPOSITORY_FILE_MODELS
     finally:
         sys.path.remove(str(TEMPLATE_HOOKS))
 
-    packaged_templates = {
-        resource.name
-        for resource in files("rs_files_templates.templates").iterdir()
-        if resource.name.endswith(".j2")
+    integrated_outputs = {
+        model_type.output_name for model_type in REPOSITORY_FILE_MODELS
     }
-    integrated_templates = {
-        model_type.template_name for model_type in REPOSITORY_FILE_MODELS
+    assert integrated_outputs == {
+        ".github/ISSUE_TEMPLATE.zip",
+        ".github/pull_request_template.md",
+        ".zenodo.json",
+        "CHANGELOG.md",
+        "CITATION.cff",
+        "CODE_OF_CONDUCT.md",
+        "CONTRIBUTING.md",
+        "GOVERNANCE.md",
+        "LICENSE",
+        "SECURITY.md",
+        "SUPPORT.md",
+        "codemeta.json",
     }
-
-    assert integrated_templates == packaged_templates
 
 
 def test_cookiecutter_contexts_are_derived_from_rsm(context_builder):

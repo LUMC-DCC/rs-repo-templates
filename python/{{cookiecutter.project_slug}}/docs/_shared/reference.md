@@ -41,7 +41,7 @@ package modules.
 {% for module in reference_modules %}
 ## `{{ module }}`
 
-{% if effective_documentation_builder == "mkdocs" %}
+{% if effective_documentation_builder in ["mkdocs", "zensical"] %}
 ::: {{ module }}
     options:
       docstring_style: numpy

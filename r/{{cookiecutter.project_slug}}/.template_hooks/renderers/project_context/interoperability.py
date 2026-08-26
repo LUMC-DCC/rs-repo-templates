@@ -48,19 +48,23 @@ def format_software_function_label(software_function):
     str
         Human-readable software-function label.
     """
-    operations = software_function.get("operation", [])
-    inputs = software_function.get("input", [])
-    outputs = software_function.get("output", [])
+    operations = software_function.get("operations", [])
+    topics = software_function.get("topics", [])
+    inputs = software_function.get("inputs", [])
+    outputs = software_function.get("outputs", [])
     command = software_function.get("cmd", "")
     note = software_function.get("note", "")
 
-    if not any((operations, inputs, outputs, command, note)):
+    if not any((operations, topics, inputs, outputs, command, note)):
         return ""
 
     operation_labels = [
         label
         for operation in operations
         if (label := format_edam_term_label(operation))
+    ]
+    topic_labels = [
+        label for topic in topics if (label := format_edam_term_label(topic))
     ]
     input_labels = [
         label
@@ -75,6 +79,8 @@ def format_software_function_label(software_function):
 
     label = ", ".join(operation_labels) or "Function"
     details = []
+    if topic_labels:
+        details.append(f"topics: {', '.join(topic_labels)}")
     if input_labels:
         details.append(f"input: {', '.join(input_labels)}")
     if output_labels:
@@ -329,7 +335,7 @@ def build_function_details(software_function):
     """
     label = ", ".join(
         operation.get("term", "")
-        for operation in software_function.get("operation", [])
+        for operation in software_function.get("operations", [])
         if operation.get("term")
     )
     if not label:
@@ -339,7 +345,7 @@ def build_function_details(software_function):
 
     operations = [
         format_edam_term_label(operation)
-        for operation in software_function.get("operation", [])
+        for operation in software_function.get("operations", [])
         if format_edam_term_label(operation)
     ]
     if operations:
@@ -347,9 +353,17 @@ def build_function_details(software_function):
             "**Operations**\n\n" + "\n".join(f"- {item}" for item in operations)
         )
 
+    topics = [
+        format_edam_term_label(topic)
+        for topic in software_function.get("topics", [])
+        if format_edam_term_label(topic)
+    ]
+    if topics:
+        sections.append("**Topics**\n\n" + "\n".join(f"- {item}" for item in topics))
+
     inputs = [
         format_function_io_label(input_record)
-        for input_record in software_function.get("input", [])
+        for input_record in software_function.get("inputs", [])
         if format_function_io_label(input_record)
     ]
     if inputs:
@@ -357,7 +371,7 @@ def build_function_details(software_function):
 
     outputs = [
         format_function_io_label(output_record)
-        for output_record in software_function.get("output", [])
+        for output_record in software_function.get("outputs", [])
         if format_function_io_label(output_record)
     ]
     if outputs:

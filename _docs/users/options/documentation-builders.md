@@ -7,6 +7,7 @@ inside a project when one or more `documentation_types` are selected.
 
 For Python, the documentation scaffold can be generated as:
 
+- `zensical`
 - `sphinx`
 - `mkdocs`
 
@@ -24,6 +25,14 @@ The generated configuration uses Material for MkDocs, search, and
 `mkdocs-awesome-pages-plugin` so page order can live next to the content in
 `docs/.pages`. Build and preview commands are written into the generated
 documentation page.
+
+## Zensical
+
+Zensical projects use a repository-root `zensical.toml` and Markdown files
+directly under `docs/`. Navigation follows the documentation directory, and
+developer documentation can render the Python reference through mkdocstrings.
+The generated documentation page includes the preview and strict build
+commands.
 
 ## Sphinx
 

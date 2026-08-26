@@ -37,11 +37,7 @@ TEMPLATE_DIRS = sorted(
 RELATIVE_SYNC_MAP = {
     "hooks": "hooks",
     "template_hooks": "{{cookiecutter.project_slug}}/.template_hooks",
-    ".github/ISSUE_TEMPLATE": "{{cookiecutter.project_slug}}/.github/ISSUE_TEMPLATE",
     ".github/dependabot.yml": "{{cookiecutter.project_slug}}/.github/dependabot.yml",
-    ".github/pull_request_template.md": (
-        "{{cookiecutter.project_slug}}/.github/pull_request_template.md"
-    ),
     ".github/workflows/changelog.yml": (
         "{{cookiecutter.project_slug}}/.github/workflows/changelog.yml"
     ),
