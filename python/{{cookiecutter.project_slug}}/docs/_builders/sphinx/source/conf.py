@@ -15,6 +15,28 @@ ROOT = Path(__file__).resolve().parents[2]
 CODEMETA_PATH = ROOT / "codemeta.json"
 PYPROJECT_PATH = ROOT / "pyproject.toml"
 
+{% set interface_types = namespace(values=[]) -%}
+{% for interface in cookiecutter.interfaces.entries -%}
+{% if interface.type is defined and interface.type -%}
+{% set _ = interface_types.values.append(interface.type) -%}
+{% endif -%}
+{% endfor -%}
+{% set mocked_imports = [] -%}
+{% if "Command-line tool" in interface_types.values -%}
+{% set _ = mocked_imports.append("typer") -%}
+{% endif -%}
+{% if "Web API" in interface_types.values or "SPARQL endpoint" in interface_types.values or "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values or "Web service" in interface_types.values -%}
+{% set _ = mocked_imports.append("fastapi") -%}
+{% endif -%}
+{% if "Ontology" in interface_types.values or "SPARQL endpoint" in interface_types.values -%}
+{% set _ = mocked_imports.append("rdflib") -%}
+{% endif -%}
+{% if "Web service" in interface_types.values -%}
+{% set _ = mocked_imports.append("a2wsgi") -%}
+{% set _ = mocked_imports.append("lxml") -%}
+{% set _ = mocked_imports.append("spyne") -%}
+{% endif -%}
+
 
 def load_project_metadata():
     """Load normalized public metadata for Sphinx.
@@ -72,6 +94,9 @@ extensions = [
     # Allow Sphinx pages to be written in Markdown with MyST directives.
     "myst_parser",
 ]
+
+# Optional interface libraries are not required merely to build API docs.
+autodoc_mock_imports = {{ mocked_imports | tojson }}
 
 exclude_patterns = []
 

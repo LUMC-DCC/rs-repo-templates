@@ -44,25 +44,28 @@ as person roles or function inputs, remain ordinary arrays:
 
 ```json
 {
-  "authors": {
+  "contributors": {
     "entries": [
       {
         "name": "Ada Lovelace",
         "given_names": "Ada",
         "family_names": "Lovelace",
         "orcid": "0000-0000-0000-0000",
-        "affiliation": {
-          "name": "Example University",
-          "identifier": "https://ror.org/012345678"
-        }
+        "affiliations": [
+          {
+            "name": "Example University",
+            "identifier": "https://ror.org/012345678"
+          }
+        ],
+        "roles": ["Original author", "Maintainer"]
       }
     ]
   }
 }
 ```
 
-Person `name` is required when a person entry exists. Structured names, email,
-ORCID, URL, affiliation, and controlled `roles` are optional. Entry schemas use
+Each contributor `name` and at least one controlled `roles` value are required.
+Structured names, email, ORCID, URL, and affiliations are optional. Entry schemas use
 one form shape, reject unknown properties, and require meaningful content.
 
 Cohesive scalar settings use small objects:
@@ -128,9 +131,18 @@ values are available directly in the JSON Schema.
 - `operating_systems.entries[].name` uses controlled platform names. Officially
   supported desktop platforms define the generated Python CI matrix.
 
+The Python template includes typed runtime configuration when an HTTP-facing
+interface is selected or when `security_measures.selected.entries` contains
+secrets management or secure configuration management. Other interface types
+do not imply configuration files. HTTP selection also adds one configured
+server command and environment keys for host, port, proxy root path, reload
+mode, and log level. FastAPI-backed selections additionally accept a public base
+URL for OpenAPI metadata. Notebook examples likewise require a future explicit
+RSM control and are not inferred from `Library` or `Script`.
+
 CI is derived from selected capabilities. Metadata, docs, tests, quality,
-changelog, licensing, containers, and distribution workflows are included only
-when their corresponding inputs request them.
+security scanning, changelog, licensing, containers, and distribution workflows
+are included only when their corresponding inputs request them.
 
 ## Metadata and releases
 
@@ -164,7 +176,8 @@ Only public information belongs in `contacts`, `public_risk_notes`,
 `security_measures`, `data_management`, and `regulatory_requirements`.
 `security_measures` and `regulatory_requirements` both use `selected` and
 `additional`; `data_management` groups the public sensitive-data statement and
-DMP reference. Selecting `CONTRIBUTING.md` adds a pull request template;
+DMP reference. Selecting vulnerability scanning adds the supported security
+workflow. Selecting `CONTRIBUTING.md` adds a pull request template;
 selecting `SUPPORT.md` adds structured issue forms.
 
 Use `_contracts/field_usage.json` for the complete field-to-artifact map.

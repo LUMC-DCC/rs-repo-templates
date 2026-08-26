@@ -10,6 +10,9 @@
 {% set has_portal = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values %}
 {% set has_web = "Web application" in interface_types.values or "Workbench" in interface_types.values %}
 {% set http_adapter_count = (1 if has_api_app else 0) + (1 if has_soap else 0) + (1 if has_portal else 0) + (1 if has_web else 0) %}
+{% set has_openapi_interface = has_api_app or has_portal or has_web %}
+{% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
+{% set has_runtime_configuration = http_adapter_count or cookiecutter.security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
 # Usage
 
 ## Installation
@@ -52,6 +55,27 @@ The package-level smoke command is:
 @@PROJECT_RUN@@python -m {{ cookiecutter.project_slug }}
 ```
 
+{% if has_runtime_configuration %}
+## Configuration
+
+For local development, copy `.env.example` to `.env` and change the values that
+apply to your environment. `{{ cookiecutter.project_slug }}.config.Settings`
+validates the project-specific environment variables when the application
+loads them. Do not commit `.env` or secret values.
+{% if http_adapter_count %}
+
+HTTP projects use the generated `*-serve` command. Its host, port, proxy root
+path, and reload mode come from `.env`. Set
+`{{ cookiecutter.project_slug | upper }}_SERVER_RELOAD=true` for local
+auto-reloading.
+{% if has_openapi_interface %}
+API, web, and portal applications can also use `PUBLIC_BASE_URL` to publish the
+externally visible URL in OpenAPI metadata.
+{% endif %}
+{% endif %}
+
+{% endif %}
+
 {% if "Library" in interface_types.values %}
 Use the public Python API from another Python module:
 
@@ -83,7 +107,7 @@ python scripts/run_example.py "example input"
 Run all selected HTTP interfaces through the deployable application:
 
 ```bash
-@@PROJECT_RUN@@uvicorn {{ cookiecutter.project_slug }}.adapters.server:app --reload
+@@PROJECT_RUN@@{{ cookiecutter.project_slug | replace('_', '-') }}-serve
 ```
 
 {% endif %}
@@ -124,7 +148,7 @@ Open `http://127.0.0.1:8000{% if http_adapter_count > 1 %}/portal{% endif %}/` i
 Run the desktop application:
 
 ```bash
-@@PROJECT_RUN@@python -m {{ cookiecutter.project_slug }}.adapters.desktop.app
+@@PROJECT_RUN@@{{ cookiecutter.project_slug | replace('_', '-') }}-desktop
 ```
 
 {% endif %}

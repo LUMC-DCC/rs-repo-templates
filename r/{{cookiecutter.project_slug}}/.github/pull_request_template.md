@@ -10,7 +10,9 @@ Use a Conventional Commit pull request title, as described in `CONTRIBUTING.md`.
 
 - [ ] The branch is rebased on the target branch.
 - [ ] The scope is focused enough for one review.
+{% if cookiecutter.include_metadata %}
 - [ ] Metadata files are updated when project name, authors, version, license, URLs, citation, or registry information changed.
+{% endif %}
 {% if cookiecutter.documentation_types.entries %}
 - [ ] Documentation is updated when installation, usage, API, CLI, configuration, or behavior changed.
 {% endif %}

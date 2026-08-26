@@ -17,13 +17,7 @@
   "keywords": {
     "entries": []
   },
-  "authors": {
-    "entries": []
-  },
-  "maintainers": {
-    "entries": []
-  },
-  "principal_investigators": {
+  "contributors": {
     "entries": []
   },
   "funding": {
@@ -59,7 +53,7 @@
   },
   "licensing": {
     "license": "",
-    "compatibility_check": ""
+    "compatibility_check": null
   },
   "include_metadata": false,
   "documentation_builder": [
@@ -108,9 +102,9 @@
     "entries": []
   },
   "quality_tools": {
-    "formatter": "",
-    "linter": "",
-    "type_checker": ""
+    "formatter": null,
+    "linter": null,
+    "type_checker": null
   },
   "project_manager": [
     "",
@@ -132,9 +126,9 @@
   ],
   "versioning": {
     "version": "",
-    "scheme": "",
+    "scheme": null,
     "scheme_details": "",
-    "release_frequency": ""
+    "release_frequency": null
   },
   "distribution_channels": {
     "entries": []
@@ -177,9 +171,7 @@
     "project_long_description": "Longer public description of the project motivation and scope.",
     "development_status": "Current repostatus.org lifecycle status for the software.",
     "keywords": "Public keywords used in package metadata, citation metadata, registries, and archives.",
-    "authors": "People who created the software. Name is required; entries may also include given_names, family_names, email, affiliation, orcid, roles, and url.",
-    "maintainers": "People responsible for maintenance. Name is required; entries may also include given_names, family_names, email, affiliation, orcid, roles, and url.",
-    "principal_investigators": "Principal investigators associated with the project. Name is required; entries may also include given_names, family_names, email, affiliation, orcid, roles, and url.",
+    "contributors": "Everyone credited for the software, each entry declaring one or more roles. Name and roles are required; entries may also include given_names, family_names, email, affiliations, orcid, and url. A non-empty list must credit at least one author, which is what citation metadata requires.",
     "funding": "Public funding records. Entries may include funder, award_number, award_title, grant_url, and project_code.",
     "motivation": "Public purpose, purpose categories, problem statement, and value proposition.",
     "audiences": "Intended users or stakeholder groups.",

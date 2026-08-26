@@ -8,7 +8,7 @@ from utils.paths import remove_path
 
 
 def update_pyproject_license(cwd, spdx_id):
-    """Set a confirmed SPDX expression in generated Python metadata.
+    """Set the generated Python license expression and file declaration.
 
     Parameters
     ----------
@@ -26,15 +26,22 @@ def update_pyproject_license(cwd, spdx_id):
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("["):
             in_project = line == "[project]"
-        if in_project and line.startswith("license = "):
+        if in_project and (
+            line.startswith("license = ") or line.startswith("license-files = ")
+        ):
             continue
         lines.append(line)
 
+    declarations = []
     if spdx_id:
-        for index, line in enumerate(lines):
-            if line.startswith("requires-python = "):
-                lines.insert(index + 1, f"license = {json.dumps(spdx_id)}")
-                break
+        declarations.append(f"license = {json.dumps(spdx_id)}")
+    if (cwd / "LICENSE").exists():
+        declarations.append('license-files = ["LICENSE"]')
+
+    for index, line in enumerate(lines):
+        if line.startswith("requires-python = "):
+            lines[index + 1 : index + 1] = declarations
+            break
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 

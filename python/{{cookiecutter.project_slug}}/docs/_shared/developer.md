@@ -13,6 +13,25 @@
 {% set effective_linter_tool = cookiecutter.quality_tools.linter if cookiecutter.quality_tools.linter in cookiecutter._template_supported_choices.quality_tools.linter else "" %}
 {% set effective_type_checker = cookiecutter.quality_tools.type_checker if cookiecutter.quality_tools.type_checker in cookiecutter._template_supported_choices.quality_tools.type_checker else "" %}
 {% set has_quality_checks = effective_formatter_tool or effective_linter_tool or effective_type_checker %}
+{% set effective_documentation_builder = cookiecutter.documentation_builder if cookiecutter.documentation_builder and cookiecutter.documentation_builder in cookiecutter._template_supported_choices.documentation_builder else "plain" %}
+{% set has_docs_workflow = cookiecutter.documentation_types.entries and effective_documentation_builder in ["mkdocs", "sphinx"] %}
+{% set has_license_workflow = cookiecutter.licensing.compatibility_check == "Yes - automated tooling" and cookiecutter.licensing.license | trim %}
+{% set has_security_workflow = "Vulnerability scanning (e.g., Snyk, Dependabot)" in cookiecutter.security_measures.selected.entries %}
+{% set container_types = namespace(values=[]) %}
+{% for container in cookiecutter.containerization.entries %}
+{% if container.type is defined %}
+{% set _ = container_types.values.append(container.type) %}
+{% endif %}
+{% endfor %}
+{% set has_container_workflow = "Docker" in container_types.values or "OCI / Podman" in container_types.values or "Apptainer / Singularity" in container_types.values %}
+{% set distribution_channels = namespace(values=[]) %}
+{% for channel in cookiecutter.distribution_channels.entries %}
+{% set _ = distribution_channels.values.append(channel | lower) %}
+{% endfor %}
+{% set has_distribution_workflow = "pypi" in distribution_channels.values or "github releases" in distribution_channels.values or "github release" in distribution_channels.values or "conda-forge" in distribution_channels.values %}
+{% set has_http_interface = "Web API" in interface_types.values or "SPARQL endpoint" in interface_types.values or "Web service" in interface_types.values or "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
+{% set has_runtime_configuration = has_http_interface or cookiecutter.security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
 # Developer guide
 
 ## Architecture
@@ -215,6 +234,21 @@ Use the top-level `workflows/` directory for engine-specific workflow
 definitions such as CWL or Snakemake files.
 
 {% endif %}
+{% if has_runtime_configuration %}
+## Runtime configuration
+
+The package-level `config.py` is the typed boundary for values that differ
+between deployments. Add settings to `Settings`, add non-secret examples to
+`.env.example`, and read configuration through `get_settings()` rather than
+calling `os.environ` throughout the codebase. Secret values belong in local or
+deployment environment configuration and must not be committed.
+
+Application entry points call `logging_config.configure_logging()`. Package
+modules create named loggers with `logging.getLogger(__name__)` and do not add
+their own handlers. HTTP app factories accept a `Settings` instance for tests;
+the generated server runner consumes bind, proxy, reload, and logging settings.
+
+{% endif %}
 {% if cookiecutter.test_types.entries %}
 ## Tests
 
@@ -257,8 +291,39 @@ Run the applicable checks through the managed environment:
 {% endif %}
 ```
 
-The metadata workflow in CI validates `codemeta.json` and `CITATION.cff` with
-the LUMC `rs-metadata` profile.
+## Continuous integration
+
+The generated workflows mirror the selected project capabilities:
+
+| Workflow | Responsibility |
+| --- | --- |
+{% if cookiecutter.include_metadata %}
+| `metadata.yml` | Validate `codemeta.json` and `CITATION.cff` with the LUMC `rs-metadata` profile. |
+{% endif %}
+{% if cookiecutter.test_types.entries %}
+| `tests.yml` | Run the selected pytest suite on officially supported operating systems. |
+{% endif %}
+{% if has_quality_checks %}
+| `quality.yml` | Run the selected formatter, linter, and type checker. |
+{% endif %}
+{% if has_docs_workflow %}
+| `docs.yml` | Build the configured documentation with warnings treated as failures. |
+{% endif %}
+{% if "CHANGELOG.md" in cookiecutter.community_files.entries %}
+| `changelog.yml` | Validate the Keep a Changelog structure. |
+{% endif %}
+{% if has_license_workflow %}
+| `license-compatibility.yml` | Check dependency licenses against the project license. |
+{% endif %}
+{% if has_security_workflow %}
+| `security.yml` | Review changed dependencies and run CodeQL analysis. |
+{% endif %}
+{% if has_container_workflow %}
+| `containers.yml` | Build selected container recipes and publish selected registry images on tags. |
+{% endif %}
+{% if has_distribution_workflow %}
+| `distribution.yml` | Validate releases, build distributions, and publish selected tagged releases. |
+{% endif %}
 
 Dependabot checks GitHub Actions and Python dependencies weekly and proposes
 updates through pull requests.

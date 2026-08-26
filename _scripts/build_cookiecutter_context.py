@@ -47,28 +47,37 @@ def load_policies(path: Path = DEFAULT_POLICY_PATH) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def field_default(field: Mapping[str, Any]) -> Any:
+def field_default(field: Mapping[str, Any], *, nested: bool = False) -> Any:
     """Derive a Cookiecutter-compatible value for one RSM field.
 
     Parameters
     ----------
     field
         JSON Schema property definition.
+    nested
+        Whether the field is nested inside an RSM object. Optional enum members
+        use ``None`` at this level so the generated context remains valid.
 
     Returns
     -------
     Any
-        Schema default, empty scalar, or empty container.
+        Schema default, an empty scalar or container, or ``None`` for an
+        optional nested enum.
     """
     field_type = field.get("type")
     if field_type == "object":
         result = copy.deepcopy(field.get("default", {}))
         for name, child in field.get("properties", {}).items():
-            result.setdefault(name, field_default(child))
+            result.setdefault(name, field_default(child, nested=True))
         return result
     if "default" in field:
         return copy.deepcopy(field["default"])
     if field_type == "string":
+        # Optional enum members are represented by ``null`` internally.
+        # Empty strings are not valid enum values, while Cookiecutter needs
+        # each nested member to exist for templates that access it directly.
+        if nested and field.get("enum"):
+            return None
         return ""
     if field_type == "boolean":
         return False

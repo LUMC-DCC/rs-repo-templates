@@ -5,7 +5,10 @@ from urllib.parse import quote, urlparse
 
 from renderers.community_files import selected_community_files
 from renderers.project_context.interoperability import interface_type_values
-from utils.context import entries, object_value, resolve_object_choice
+from utils.containerization import has_container_recipe
+from utils.context import entries, object_value, resolve_choice, resolve_object_choice
+from utils.release import has_python_distribution
+from utils.security import has_vulnerability_scanning
 
 
 def shields_badge_url(label, message, color="blue", label_color="gray"):
@@ -129,7 +132,8 @@ def primary_workflow(ctx):
     str
         Workflow file name, or an empty string when CI is not generated.
     """
-    if str(ctx.get("_template_name", "")).strip().lower() == "python":
+    is_python = str(ctx.get("_template_name", "")).strip().lower() == "python"
+    if is_python:
         if entries(ctx, "test_types"):
             return "tests.yml"
 
@@ -140,12 +144,35 @@ def primary_workflow(ctx):
         )
         if any(quality_choices):
             return "quality.yml"
-        if entries(ctx, "documentation_types"):
+        requested_builder, documentation_builder = resolve_choice(
+            ctx,
+            "documentation_builder",
+            fallback="plain",
+        )
+        if not requested_builder:
+            documentation_builder = "plain"
+        if entries(ctx, "documentation_types") and documentation_builder in {
+            "mkdocs",
+            "sphinx",
+        }:
             return "docs.yml"
+        if has_vulnerability_scanning(ctx):
+            return "security.yml"
     if ctx.get("include_metadata", False):
         return "metadata.yml"
     if "CHANGELOG.md" in selected_community_files(ctx):
         return "changelog.yml"
+    if (
+        is_python
+        and object_value(ctx, "licensing", "compatibility_check")
+        == ("Yes - automated tooling")
+        and str(object_value(ctx, "licensing", "license")).strip()
+    ):
+        return "license-compatibility.yml"
+    if is_python and has_container_recipe(entries(ctx, "containerization")):
+        return "containers.yml"
+    if is_python and has_python_distribution(entries(ctx, "distribution_channels")):
+        return "distribution.yml"
     return ""
 
 

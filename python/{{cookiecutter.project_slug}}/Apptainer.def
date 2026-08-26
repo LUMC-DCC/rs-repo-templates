@@ -47,10 +47,14 @@ From: python:3.12-slim
 %environment
     export PYTHONUNBUFFERED=1
     export PYTHONDONTWRITEBYTECODE=1
+{% if has_api or has_soap or has_web or has_portal %}
+    export {{ cookiecutter.project_slug | upper }}_SERVER_HOST=0.0.0.0
+    export {{ cookiecutter.project_slug | upper }}_SERVER_PORT=8000
+{% endif %}
 
 %runscript
 {% if has_api or has_soap or has_web or has_portal %}
-    exec uvicorn {{ cookiecutter.project_slug }}.adapters.server:app --host 0.0.0.0 --port 8000 "$@"
+    exec {{ cookiecutter.project_slug | replace('_', '-') }}-serve "$@"
 {% else %}
     exec python -m {{ cookiecutter.project_slug }} "$@"
 {% endif %}

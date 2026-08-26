@@ -7,7 +7,19 @@ tested without opening a window.
 
 import tkinter as tk
 
+{% set interface_types = namespace(values=[]) %}
+{% for interface in cookiecutter.interfaces.entries %}
+{% if interface.type is defined and interface.type %}
+{% set _ = interface_types.values.append(interface.type) %}
+{% endif %}
+{% endfor %}
+{% set has_http_interface = "Web API" in interface_types.values or "SPARQL endpoint" in interface_types.values or "Web service" in interface_types.values or "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
+{% set has_runtime_configuration = has_http_interface or cookiecutter.security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
 from {{ cookiecutter.project_slug }}.adapters.desktop.view_model import build_view_model
+{% if has_runtime_configuration %}
+from {{ cookiecutter.project_slug }}.logging_config import configure_logging
+{% endif %}
 
 
 def create_window(text: str = "{{ (cookiecutter.project_name or cookiecutter.project_slug) }}") -> tk.Tk:
@@ -45,6 +57,9 @@ def create_window(text: str = "{{ (cookiecutter.project_name or cookiecutter.pro
 
 def main() -> None:
     """Run the desktop application event loop."""
+{% if has_runtime_configuration %}
+    configure_logging()
+{% endif %}
     create_window().mainloop()
 
 

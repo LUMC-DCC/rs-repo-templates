@@ -50,12 +50,25 @@ pipeline.
 | `Workflow` | Top-level workflow definition folder plus Python config, IO, typed steps, and pipeline modules. |
 
 `pyproject.toml` is the source for Python package metadata and optional
-dependency groups such as `metadata`, `test`, and `docs`.
+dependency groups such as `test`, `docs`, `quality`, and HTTP interface extras.
+
+HTTP-facing projects, and projects that explicitly select secrets or secure
+configuration management, include a package-level typed settings module and
+`.env.example`. The example contains only non-secret defaults; local `.env`
+files stay ignored. `pyproject.toml` remains the Python dependency and project
+environment specification.
+
+Generated application entry points configure standard-library logging, while
+package modules use named hierarchical loggers. HTTP projects add a `*-serve`
+command that consumes the configured bind host, port, reverse-proxy root path,
+reload mode, and log level. FastAPI-backed interfaces can additionally publish
+an optional public base URL. Container entry points use the same command with a
+container-safe bind address.
 
 When HTTP-facing adapters are included, `pyproject.toml` includes optional
 dependency groups for those adapters. When a command-line adapter is included,
 `pyproject.toml` includes Typer as a package dependency and adds a console
-script entry point.
+script entry point. A desktop application adds a GUI script entry point.
 
 The Python structure follows a few stable conventions: a `src/` layout for
 importable package code, short package `__init__.py` files, `__main__.py` as a
@@ -108,6 +121,8 @@ Generated user, developer, and deployment documentation also follows the
 selected interface types. The developer page describes the architecture of the
 included scaffolds, the usage page shows relevant run commands, and the
 deployment page includes only relevant runtime notes.
+The MkDocs and Sphinx scaffolds generate technical reference pages from public
+NumPy-style docstrings in the selected package modules.
 
 ## Project metadata
 
@@ -130,6 +145,11 @@ When `operating_systems` includes officially supported Linux, macOS, or Windows 
 the Python template maps them to package operating-system classifiers and to the
 tests workflow matrix when GitHub Actions tests are included. Platforms marked
 `Expected to work` stay visible in generated documentation and metadata.
+
+Smoke tests verify that selected interface construction points import. When
+integration tests are selected, they exercise CLI commands, HTTP requests,
+desktop view models, plug-ins, suites, ontologies, workflows, scripts, and SOAP
+contracts as applicable to the selected interfaces.
 
 When `external_dependencies` is provided, those entries are documented as
 external requirements and added to CodeMeta `softwareRequirements`. They are not
@@ -167,6 +187,10 @@ type checker. The current Python scaffold supports `ruff` and optional `mypy`.
 When any quality check is selected, the template includes pre-commit for local
 checks and a dedicated `quality.yml` workflow for CI.
 
+When `security_measures.selected.entries` includes vulnerability scanning, the
+template adds `security.yml` with dependency review for pull requests and
+scheduled CodeQL analysis.
+
 Workflow inclusion is derived from the selected capabilities; there is no
 separate global CI switch. MkDocs derives project identity, description, and
 repository links from `codemeta.json`; Sphinx derives project identity,
@@ -188,6 +212,11 @@ backend independently of this choice.
 Generated repositories do not include a precomputed lockfile. Managers that
 support locking create it during normal setup. CI resolves dependencies when no
 lockfile exists and checks or uses a committed lockfile when one is present.
+
+Jupyter notebooks are not inferred from `Library` or `Script`. A notebook is a
+user-facing example artifact rather than an access interface, so it requires an
+explicit controlled metadata selection before the template can include one
+predictably.
 
 ## Containers and distribution
 

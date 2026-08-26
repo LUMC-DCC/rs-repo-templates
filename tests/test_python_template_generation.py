@@ -39,17 +39,19 @@ BASE_CONTEXT = {
     },
     "development_status": "active",
     "keywords": {"entries": ["research-software", "template"]},
-    "authors": {
+    "contributors": {
         "entries": [
             {
                 "name": "Ada Lovelace",
                 "given_names": "Ada",
                 "family_names": "Lovelace",
                 "email": "ada@example.org",
-                "affiliation": {
-                    "name": "Leiden University Medical Center",
-                    "identifier": "https://ror.org/05xvt9f17",
-                },
+                "affiliations": [
+                    {
+                        "name": "Leiden University Medical Center",
+                        "identifier": "https://ror.org/05xvt9f17",
+                    }
+                ],
                 "orcid": "0000-0002-1825-0097",
                 "url": "https://example.org/ada",
                 "roles": ["Original author", "Maintainer"],
@@ -59,34 +61,31 @@ BASE_CONTEXT = {
                 "given_names": "Grace",
                 "family_names": "Hopper",
                 "email": "grace@example.org",
-                "affiliation": {
-                    "name": "Leiden University Medical Center",
-                    "identifier": "https://ror.org/05xvt9f17",
-                },
+                "affiliations": [
+                    {
+                        "name": "Leiden University Medical Center",
+                        "identifier": "https://ror.org/05xvt9f17",
+                    }
+                ],
                 "orcid": "0000-0001-5109-3700",
                 "roles": ["Co-author"],
             },
-        ],
-    },
-    "maintainers": {
-        "entries": [
             {
                 "name": "Research Software Team",
                 "email": "rs@example.org",
                 "url": "https://example.org/research-software-team",
-            }
-        ]
-    },
-    "principal_investigators": {
-        "entries": [
+                "roles": ["Maintainer"],
+            },
             {
                 "name": "Katherine Johnson",
-                "affiliation": {
-                    "name": "Leiden University Medical Center",
-                    "identifier": "https://ror.org/05xvt9f17",
-                },
+                "affiliations": [
+                    {
+                        "name": "Leiden University Medical Center",
+                        "identifier": "https://ror.org/05xvt9f17",
+                    }
+                ],
                 "roles": ["Principal investigator"],
-            }
+            },
         ],
     },
     "funding": {
@@ -230,7 +229,6 @@ BASE_CONTEXT = {
     "software_functions": {
         "entries": [
             {
-                "summary": "Statistical data analysis",
                 "operation": [
                     {
                         "term": "Statistical data analysis",
@@ -612,9 +610,66 @@ def expected_test_dependencies(context):
         "Workbench",
     }:
         dependencies.append("fastapi")
+    if interface_types & {
+        "Bioinformatics portal",
+        "Database portal",
+        "SPARQL endpoint",
+        "Web API",
+        "Web application",
+        "Workbench",
+    }:
+        dependencies.append("httpx")
     test_types = context.get("test_types", {}).get("entries", [])
     if "Property-based / fuzz" in test_types:
         dependencies.append("hypothesis")
+    return dependencies
+
+
+def expected_runtime_dependencies(context):
+    """Return expected Python runtime dependencies for one context.
+
+    Parameters
+    ----------
+    context : dict
+        Rendered or requested Cookiecutter context values.
+
+    Returns
+    -------
+    list of str
+        Expected dependencies in ``project.dependencies``.
+    """
+    dependencies = []
+    interface_types = {
+        interface.get("type", "")
+        for interface in context.get("interfaces", {}).get("entries", [])
+        if isinstance(interface, dict)
+    }
+    if "Command-line tool" in interface_types:
+        dependencies.append("typer")
+    if interface_types & {"Ontology", "SPARQL endpoint"}:
+        dependencies.append("rdflib")
+    configuration_measures = {
+        "Secrets management (e.g., environment variables, vault)",
+        "Secure configuration management (e.g., Infrastructure-as-Code, hardening)",
+    }
+    security_measures = (
+        context.get("security_measures", {}).get("selected", {}).get("entries", [])
+    )
+    http_interfaces = {
+        "Bioinformatics portal",
+        "Database portal",
+        "SPARQL endpoint",
+        "Web API",
+        "Web application",
+        "Web service",
+        "Workbench",
+    }
+    has_runtime_configuration = bool(
+        interface_types & http_interfaces
+        or set(security_measures) & configuration_measures
+    )
+    if has_runtime_configuration:
+        dependencies.append("pydantic-settings")
     return dependencies
 
 
@@ -713,10 +768,15 @@ def assert_selected_test_files(project_path, selected_types):
                 ".github/workflows/distribution.yml",
                 ".github/workflows/changelog.yml",
                 ".github/workflows/license-compatibility.yml",
+                ".github/workflows/security.yml",
+                ".env.example",
+                "src/research_template_demo/config.py",
+                "src/research_template_demo/logging_config.py",
                 "src/research_template_demo/adapters/api/__init__.py",
                 "src/research_template_demo/adapters/api/app.py",
                 "src/research_template_demo/adapters/api/routes/processing.py",
                 "src/research_template_demo/adapters/api/schemas.py",
+                "src/research_template_demo/adapters/server_runner.py",
                 "src/research_template_demo/adapters/cli/__init__.py",
                 "src/research_template_demo/adapters/cli/app.py",
                 "src/research_template_demo/adapters/cli/commands/process.py",
@@ -753,6 +813,7 @@ def assert_selected_test_files(project_path, selected_types):
                 "distribution_channels": {"entries": []},
                 "containerization": {"entries": []},
                 "community_files": {"entries": []},
+                "security_measures": {"selected": {"entries": []}, "additional": ""},
             },
             [
                 "README.md",
@@ -791,7 +852,12 @@ def assert_selected_test_files(project_path, selected_types):
                 ".github/workflows/distribution.yml",
                 ".github/workflows/changelog.yml",
                 ".github/workflows/license-compatibility.yml",
+                ".github/workflows/security.yml",
                 ".github/actions/setup-python-project",
+                ".env.example",
+                "src/minimal_demo/config.py",
+                "src/minimal_demo/logging_config.py",
+                "src/minimal_demo/adapters/server_runner.py",
                 ".zenodo.json",
                 "licenses",
             ],
@@ -850,6 +916,7 @@ def test_python_template_generates_expected_option_sets(
     )
     assert metadata["project"]["keywords"] == BASE_CONTEXT["keywords"]["entries"]
     assert metadata["project"]["classifiers"] == [
+        "Programming Language :: Python :: 3",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ]
@@ -861,7 +928,10 @@ def test_python_template_generates_expected_option_sets(
             "format": "simple",
             "zero": True,
         }
-        assert metadata["project"]["dependencies"] == ["typer"]
+        assert metadata["project"]["dependencies"] == expected_runtime_dependencies(
+            BASE_CONTEXT,
+        )
+        assert metadata["project"]["license-files"] == ["LICENSE"]
         assert optional_dependencies["api"] == ["fastapi", "uvicorn[standard]"]
         assert optional_dependencies["quality"] == ["pre-commit", "ruff"]
         assert optional_dependencies["release"] == ["build", "packaging", "twine"]
@@ -869,10 +939,15 @@ def test_python_template_generates_expected_option_sets(
         assert "target-version" not in metadata["tool"]["ruff"]
         assert metadata["project"]["scripts"] == {
             "research-template-demo": "research_template_demo.adapters.cli.app:main",
+            "research-template-demo-serve": (
+                "research_template_demo.adapters.server_runner:main"
+            ),
         }
         for workflow_path in (project_path / ".github" / "workflows").glob("*.yml"):
             workflow = workflow_path.read_text(encoding="utf-8")
             assert "permissions:\n  contents: read" in workflow
+            assert "concurrency:" in workflow
+            assert "timeout-minutes:" in workflow
         assert_external_actions_are_pinned(project_path)
         dependabot = yaml.safe_load(
             (project_path / ".github" / "dependabot.yml").read_text(encoding="utf-8")
@@ -903,7 +978,9 @@ def test_python_template_generates_expected_option_sets(
             text=True,
         )
     else:
-        assert metadata["project"]["dependencies"] == []
+        assert metadata["project"]["dependencies"] == expected_runtime_dependencies(
+            BASE_CONTEXT | overrides,
+        )
         assert "license" not in optional_dependencies
         assert "quality" not in optional_dependencies
         assert "release" not in optional_dependencies
@@ -911,6 +988,7 @@ def test_python_template_generates_expected_option_sets(
         assert "ruff" not in metadata.get("tool", {})
         assert "api" not in optional_dependencies
         assert "scripts" not in metadata["project"]
+        assert "license-files" not in metadata["project"]
     rendered_context = BASE_CONTEXT | overrides
     if rendered_context["test_types"]["entries"]:
         assert optional_dependencies["test"] == expected_test_dependencies(
@@ -929,6 +1007,7 @@ def test_python_template_generates_expected_option_sets(
     assert [
         maintainer["name"] for maintainer in metadata["project"]["maintainers"]
     ] == [
+        "Ada Lovelace",
         "Research Software Team",
     ]
     expected_urls = {
@@ -1143,10 +1222,14 @@ def test_python_containerization_generates_composable_recipes_and_ci(
     assert dockerfile == containerfile
     assert "FROM python:3.12-slim AS builder" in dockerfile
     assert "USER appuser" in dockerfile
-    assert "container_demo.adapters.server:app" in dockerfile
+    assert "CONTAINER_DEMO_SERVER_HOST=0.0.0.0" in dockerfile
+    assert 'CMD ["container-demo-serve"]' in dockerfile
+    assert "SERVER_PORT=8000WORKDIR" not in dockerfile
+    assert "\n \\\n" not in dockerfile
     assert "Bootstrap: docker" in apptainer
     assert "%test" in apptainer
-    assert "container_demo.adapters.server:app" in apptainer
+    assert "CONTAINER_DEMO_SERVER_HOST=0.0.0.0" in apptainer
+    assert "exec container-demo-serve" in apptainer
     assert "- Dockerfile" in workflow
     assert "- Containerfile" in workflow
     assert "apptainer build --fakeroot container_demo.sif" in workflow
@@ -1614,6 +1697,7 @@ def test_python_operating_systems_render_platform_metadata_and_ci(
         "Windows",
     ]
     assert pyproject["project"]["classifiers"] == [
+        "Programming Language :: Python :: 3",
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
     ]
@@ -1702,6 +1786,101 @@ def test_python_external_services_render_generated_docs_only(tmp_path, monkeypat
         assert ci_line in content
 
 
+@pytest.mark.parametrize(
+    ("project_slug", "interfaces", "security_measures", "expected"),
+    [
+        (
+            "http_config_demo",
+            {"entries": [{"type": "Web API"}]},
+            {"selected": {"entries": []}, "additional": ""},
+            True,
+        ),
+        (
+            "secure_config_demo",
+            {"entries": [{"type": "Script"}]},
+            {
+                "selected": {
+                    "entries": [
+                        "Secrets management (e.g., environment variables, vault)"
+                    ]
+                },
+                "additional": "",
+            },
+            True,
+        ),
+        (
+            "lean_library_demo",
+            {"entries": [{"type": "Library"}]},
+            {"selected": {"entries": []}, "additional": ""},
+            False,
+        ),
+    ],
+)
+def test_python_runtime_configuration_follows_selected_capabilities(
+    tmp_path,
+    monkeypatch,
+    project_slug,
+    interfaces,
+    security_measures,
+    expected,
+):
+    """Ensure runtime settings are included only for relevant capabilities."""
+    project_path = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_slug=project_slug,
+        interfaces=interfaces,
+        security_measures=security_measures,
+    )
+
+    config_path = project_path / "src" / project_slug / "config.py"
+    logging_path = project_path / "src" / project_slug / "logging_config.py"
+    env_example_path = project_path / ".env.example"
+    assert config_path.exists() is expected
+    assert logging_path.exists() is expected
+    assert env_example_path.exists() is expected
+
+    context = BASE_CONTEXT | {
+        "interfaces": interfaces,
+        "security_measures": security_measures,
+    }
+    pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+    assert pyproject["project"]["dependencies"] == expected_runtime_dependencies(
+        context,
+    )
+    if expected:
+        env_example = env_example_path.read_text(encoding="utf-8")
+        assert f"{project_slug.upper()}_LOG_LEVEL=INFO" in env_example
+        assert "SECRET=" not in env_example
+        assert "logging.getLogger" in logging_path.read_text(encoding="utf-8")
+    is_http = interfaces["entries"][0]["type"] in {
+        "Bioinformatics portal",
+        "Database portal",
+        "SPARQL endpoint",
+        "Web API",
+        "Web application",
+        "Web service",
+        "Workbench",
+    }
+    server_runner_path = (
+        project_path / "src" / project_slug / "adapters" / "server_runner.py"
+    )
+    assert server_runner_path.exists() is is_http
+    if is_http:
+        env_example = env_example_path.read_text(encoding="utf-8")
+        assert f"{project_slug.upper()}_SERVER_HOST=127.0.0.1" in env_example
+        assert f"{project_slug.upper()}_SERVER_PORT=8000" in env_example
+        runner = server_runner_path.read_text(encoding="utf-8")
+        for setting in (
+            "settings.server_host",
+            "settings.server_port",
+            "settings.server_root_path",
+            "settings.server_reload",
+            "settings.log_level.lower()",
+        ):
+            assert setting in runner
+
+
 def test_python_interfaces_keep_matching_code_scaffolds(tmp_path, monkeypatch):
     """Ensure interface entries control matching Python code scaffolds."""
     project_path = render_python_project(
@@ -1742,10 +1921,108 @@ def test_python_interfaces_keep_matching_code_scaffolds(tmp_path, monkeypatch):
         "fastapi",
         "uvicorn[standard]",
     ]
-    assert metadata["project"]["dependencies"] == ["typer"]
+    assert metadata["project"]["dependencies"] == expected_runtime_dependencies(
+        BASE_CONTEXT
+        | {
+            "interfaces": {
+                "entries": [
+                    {"type": "Command-line tool"},
+                    {"type": "Web API"},
+                    {"type": "Script"},
+                ]
+            }
+        },
+    )
     assert metadata["project"]["scripts"] == {
         "interface-scaffold-demo": "interface_scaffold_demo.adapters.cli.app:main",
+        "interface-scaffold-demo-serve": (
+            "interface_scaffold_demo.adapters.server_runner:main"
+        ),
     }
+
+
+@pytest.mark.parametrize(
+    ("interface_type", "is_http"),
+    [
+        ("Bioinformatics portal", True),
+        ("Command-line tool", False),
+        ("Database portal", True),
+        ("Desktop application", False),
+        ("Library", False),
+        ("Ontology", False),
+        ("Plug-in", False),
+        ("Script", False),
+        ("SPARQL endpoint", True),
+        ("Suite", False),
+        ("Web application", True),
+        ("Web API", True),
+        ("Web service", True),
+        ("Workbench", True),
+        ("Workflow", False),
+    ],
+)
+def test_python_each_canonical_interface_renders_independently(
+    tmp_path,
+    monkeypatch,
+    interface_type,
+    is_http,
+):
+    """Ensure every canonical interface is a valid standalone selection."""
+    project_slug = re.sub(r"[^a-z0-9]+", "_", interface_type.lower()).strip("_")
+    interfaces = {"entries": [{"type": interface_type}]}
+    security_measures = {"selected": {"entries": []}, "additional": ""}
+    project_path = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_slug=project_slug,
+        interfaces=interfaces,
+        security_measures=security_measures,
+    )
+
+    assert_no_template_artifacts(project_path)
+    for source_path in (project_path / "src").rglob("*.py"):
+        compile(source_path.read_text(encoding="utf-8"), str(source_path), "exec")
+
+    config_path = project_path / "src" / project_slug / "config.py"
+    logging_path = project_path / "src" / project_slug / "logging_config.py"
+    server_runner_path = (
+        project_path / "src" / project_slug / "adapters" / "server_runner.py"
+    )
+    assert config_path.exists() is is_http
+    assert logging_path.exists() is is_http
+    assert server_runner_path.exists() is is_http
+
+    pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+    context = BASE_CONTEXT | {
+        "interfaces": interfaces,
+        "security_measures": security_measures,
+    }
+    assert pyproject["project"]["dependencies"] == expected_runtime_dependencies(
+        context
+    )
+
+    expected_scripts = {}
+    command_name = project_slug.replace("_", "-")
+    if interface_type == "Command-line tool":
+        expected_scripts[command_name] = f"{project_slug}.adapters.cli.app:main"
+    if is_http:
+        expected_scripts[f"{command_name}-serve"] = (
+            f"{project_slug}.adapters.server_runner:main"
+        )
+    assert pyproject["project"].get("scripts", {}) == expected_scripts
+
+    env = os.environ | {"PYTHONPATH": str(project_path / "src")}
+    generated_tests = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q"],
+        cwd=project_path,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert generated_tests.returncode == 0, (
+        generated_tests.stdout + generated_tests.stderr
+    )
 
 
 def test_python_canonical_tool_types_select_expected_scaffolds(tmp_path, monkeypatch):
@@ -1783,6 +2060,7 @@ def test_python_canonical_tool_types_select_expected_scaffolds(tmp_path, monkeyp
         "src/canonical_interfaces_demo/adapters/api/routes/sparql.py",
         "src/canonical_interfaces_demo/adapters/api/schemas.py",
         "src/canonical_interfaces_demo/adapters/server.py",
+        "src/canonical_interfaces_demo/adapters/server_runner.py",
         "src/canonical_interfaces_demo/adapters/soap/app.py",
         "src/canonical_interfaces_demo/adapters/soap/service.py",
         "src/canonical_interfaces_demo/adapters/cli/app.py",
@@ -1864,7 +2142,11 @@ def test_python_canonical_tool_types_select_expected_scaffolds(tmp_path, monkeyp
 
     metadata = tomllib.loads((project_path / "pyproject.toml").read_text())
     optional_dependencies = metadata["project"]["optional-dependencies"]
-    assert metadata["project"]["dependencies"] == ["typer", "rdflib"]
+    assert metadata["project"]["dependencies"] == [
+        "typer",
+        "rdflib",
+        "pydantic-settings",
+    ]
     assert optional_dependencies["api"] == ["fastapi", "uvicorn[standard]"]
     assert optional_dependencies["soap"] == [
         "a2wsgi",
@@ -1883,6 +2165,37 @@ def test_python_canonical_tool_types_select_expected_scaffolds(tmp_path, monkeyp
             "example": "canonical_interfaces_demo.adapters.plugin.registry:get_plugin",
         },
     }
+    assert metadata["project"]["gui-scripts"] == {
+        "canonical-interfaces-demo-desktop": (
+            "canonical_interfaces_demo.adapters.desktop.app:main"
+        ),
+    }
+    assert metadata["project"]["scripts"] == {
+        "canonical-interfaces-demo": (
+            "canonical_interfaces_demo.adapters.cli.app:main"
+        ),
+        "canonical-interfaces-demo-serve": (
+            "canonical_interfaces_demo.adapters.server_runner:main"
+        ),
+    }
+    integration_tests = (project_path / "tests/test_integration.py").read_text(
+        encoding="utf-8"
+    )
+    for test_name in (
+        "test_cli_application_processes_a_command",
+        "test_api_application_serves_selected_routes",
+        "test_portal_application_serves_pages_and_records",
+        "test_web_application_serves_a_browser_page",
+        "test_combined_server_mounts_selected_http_interfaces",
+        "test_soap_application_publishes_wsdl",
+        "test_desktop_view_model_processes_without_opening_a_window",
+        "test_plugin_registry_returns_a_working_plugin",
+        "test_suite_runner_dispatches_a_registered_command",
+        "test_ontology_document_is_valid_turtle",
+        "test_workflow_pipeline_coordinates_selected_steps",
+        "test_example_script_can_run_without_cli_process",
+    ):
+        assert test_name in integration_tests
 
 
 def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch):
@@ -1924,7 +2237,7 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
 
     sparql_route = (routes_dir / "sparql.py").read_text(encoding="utf-8")
     metadata = tomllib.loads((project_path / "pyproject.toml").read_text())
-    assert metadata["project"]["dependencies"] == ["rdflib"]
+    assert metadata["project"]["dependencies"] == ["rdflib", "pydantic-settings"]
     assert "ontology_graph" in sparql_route
     assert "graph.query(query)" in sparql_route
 
@@ -1970,6 +2283,7 @@ def test_python_sparql_endpoint_scaffold_is_route_specific(tmp_path, monkeypatch
                 "mkdocs-awesome-pages-plugin",
                 "mkdocs-material",
                 "pymdown-extensions",
+                "mkdocstrings[python]",
             ],
             "mkdocs build --strict",
         ),
@@ -2072,8 +2386,19 @@ def test_python_documentation_builder_scaffolds_are_selected(
         assert mkdocs_config["site_name"] == BASE_CONTEXT["project_name"]
         assert mkdocs_config["theme"]["name"] == "material"
         assert mkdocs_config["hooks"] == ["docs/hooks.py"]
-        assert mkdocs_config["plugins"] == ["search", "awesome-pages"]
+        assert mkdocs_config["plugins"] == [
+            "search",
+            "awesome-pages",
+            {
+                "mkdocstrings": {
+                    "handlers": {"python": {"paths": ["src"]}},
+                }
+            },
+        ]
         assert "nav" not in mkdocs_config
+        reference = (project_path / "docs/reference.md").read_text(encoding="utf-8")
+        assert "::: mkdocs_docs_demo" in reference
+        assert "mkdocs_docs_demo.services.processing" in reference
 
         hook_path = project_path / "docs" / "hooks.py"
         spec = importlib.util.spec_from_file_location(
@@ -2105,12 +2430,25 @@ def test_python_documentation_builder_scaffolds_are_selected(
             "legal.md",
             "...",
         ]
+        build = subprocess.run(
+            ["mkdocs", "build", "--strict"],
+            cwd=project_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert build.returncode == 0, build.stdout + build.stderr
 
     if docs_dependencies == ["myst-parser", "sphinx", "sphinx-book-theme"]:
         sphinx_config = (project_path / "docs" / "source" / "conf.py").read_text(
             encoding="utf-8"
         )
         assert 'html_theme = "sphinx_book_theme"' in sphinx_config
+        reference = (project_path / "docs/source/reference.md").read_text(
+            encoding="utf-8"
+        )
+        assert ".. automodule:: sphinx_docs_demo" in reference
+        assert "sphinx_docs_demo.services.processing" in reference
         assert '"sphinx.ext.autodoc"' in sphinx_config
         assert '"myst_parser"' in sphinx_config
         assert 'project = PROJECT_METADATA["name"]' in sphinx_config
@@ -2121,6 +2459,21 @@ def test_python_documentation_builder_scaffolds_are_selected(
         assert f'release = metadata.version("{expected_distribution}")' in sphinx_config
         assert "except metadata.PackageNotFoundError:" in sphinx_config
         assert 'release = PROJECT_METADATA["version"]' in sphinx_config
+        build = subprocess.run(
+            [
+                "sphinx-build",
+                "-W",
+                "-b",
+                "html",
+                "docs/source",
+                "docs/build/html",
+            ],
+            cwd=project_path,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        assert build.returncode == 0, build.stdout + build.stderr
 
 
 def test_python_empty_documentation_builder_uses_plain_markdown(tmp_path, monkeypatch):
@@ -2172,7 +2525,7 @@ def test_python_documentation_types_select_expected_pages(tmp_path, monkeypatch)
 
     deployment = (project_path / "docs" / "deployment.md").read_text(encoding="utf-8")
     assert "## HTTP service" in deployment
-    assert "uvicorn research_template_demo.adapters.server:app" in deployment
+    assert "research-template-demo-serve" in deployment
     assert "## Script" in deployment
     assert "## Web application" not in deployment
     assert "## Portal" not in deployment
@@ -2256,6 +2609,7 @@ def test_python_custom_license_generates_custom_license_file(tmp_path, monkeypat
     docs_legal = (project_path / "docs" / "legal.md").read_text(encoding="utf-8")
 
     assert "license" not in pyproject["project"]
+    assert pyproject["project"]["license-files"] == ["LICENSE"]
     assert "license" not in pyproject["project"]["optional-dependencies"]
     assert "licensecheck" not in pyproject.get("tool", {})
     assert not (
@@ -2283,6 +2637,7 @@ def test_python_license_accepts_any_spdx_identifier(tmp_path, monkeypatch):
 
     assert license_text == "BSD 3-Clause License\n\nRedistribution permitted.\n"
     assert pyproject["project"]["license"] == "BSD-3-Clause"
+    assert pyproject["project"]["license-files"] == ["LICENSE"]
     assert pyproject["tool"]["licensecheck"]["license"] == "BSD-3-Clause"
     assert codemeta["license"] == "https://spdx.org/licenses/BSD-3-Clause"
     assert (
@@ -2463,6 +2818,63 @@ def test_python_operational_context_prefers_docs_with_readme_fallback(
     assert "Security maintenance only" in fallback_readme
     assert "## Security and data" in fallback_readme
     assert "DMP-123" in fallback_readme
+
+
+def test_python_vulnerability_scanning_controls_security_workflow(
+    tmp_path,
+    monkeypatch,
+):
+    """Ensure vulnerability-scanning metadata controls security automation."""
+    selected_tmp = tmp_path / "selected"
+    selected_tmp.mkdir()
+    selected_path = render_python_project(
+        selected_tmp,
+        monkeypatch,
+        project_slug="security_scan_demo",
+        documentation_builder="",
+        test_types={"entries": []},
+        quality_tools={"formatter": "", "linter": "", "type_checker": ""},
+        include_metadata=False,
+        community_files={"entries": []},
+        licensing={"license": "MIT", "compatibility_check": ""},
+        containerization={"entries": []},
+        distribution_channels={"entries": []},
+    )
+    workflow_path = selected_path / ".github/workflows/security.yml"
+    workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
+    developer_docs = (selected_path / "docs/developer.md").read_text(encoding="utf-8")
+
+    assert set(workflow["jobs"]) == {"dependency-review", "codeql"}
+    assert workflow["jobs"]["dependency-review"]["timeout-minutes"] == 10
+    assert workflow["jobs"]["codeql"]["timeout-minutes"] == 30
+    assert "`security.yml`" in developer_docs
+    readme = (selected_path / "README.md").read_text(encoding="utf-8")
+    assert "actions/workflows/security.yml/badge.svg" in readme
+    assert not (selected_path / ".github/workflows/docs.yml").exists()
+
+    unselected_tmp = tmp_path / "unselected"
+    unselected_tmp.mkdir()
+    unselected_path = render_python_project(
+        unselected_tmp,
+        monkeypatch,
+        project_slug="without_security_scan_demo",
+        documentation_builder="",
+        test_types={"entries": []},
+        quality_tools={"formatter": "", "linter": "", "type_checker": ""},
+        include_metadata=False,
+        community_files={"entries": []},
+        licensing={"license": "MIT", "compatibility_check": ""},
+        containerization={"entries": []},
+        distribution_channels={"entries": []},
+        security_measures={
+            "selected": {"entries": ["Security patch management process"]},
+            "additional": "",
+        },
+    )
+    assert not (unselected_path / ".github/workflows/security.yml").exists()
+    assert "`security.yml`" not in (unselected_path / "docs/developer.md").read_text(
+        encoding="utf-8"
+    )
 
 
 def test_generated_python_package_imports(tmp_path, monkeypatch):
@@ -2714,7 +3126,7 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
     assert "Web API (Experimental)" in docs_usage
     assert "Script (Experimental)" in docs_usage
     assert 'research-template-demo process "example input"' in docs_usage
-    assert "uvicorn research_template_demo.adapters.server:app --reload" in docs_usage
+    assert "research-template-demo-serve" in docs_usage
     assert 'python scripts/run_example.py "example input"' in docs_usage
     assert "adapters.web.app" not in docs_usage
     assert "## Interface contracts" in docs_developer
@@ -2882,11 +3294,25 @@ def test_python_template_generates_codemeta_metadata(tmp_path, monkeypatch):
     assert codemeta["maintainer"] == [
         {
             "@type": "Person",
+            "@id": "https://orcid.org/0000-0002-1825-0097",
+            "name": "Ada Lovelace",
+            "givenName": "Ada",
+            "familyName": "Lovelace",
+            "email": "ada@example.org",
+            "affiliation": {
+                "@type": "Organization",
+                "@id": "https://ror.org/05xvt9f17",
+                "name": "Leiden University Medical Center",
+            },
+            "url": "https://example.org/ada",
+        },
+        {
+            "@type": "Person",
             "@id": "https://example.org/research-software-team",
             "name": "Research Software Team",
             "email": "rs@example.org",
             "url": "https://example.org/research-software-team",
-        }
+        },
     ]
     assert codemeta["contributor"] == [
         {
@@ -2922,7 +3348,7 @@ def test_project_team_fallback_renders_when_authors_are_missing(
     project_path = render_python_project(
         tmp_path,
         monkeypatch,
-        authors={"entries": []},
+        contributors={"entries": []},
         documentation_builder="sphinx",
     )
 
@@ -2947,14 +3373,14 @@ def test_python_codemeta_preserves_overlapping_people_roles(tmp_path, monkeypatc
         "given_names": "Ada",
         "family_names": "Lovelace",
         "email": "ada@example.org",
-        "affiliation": {"name": "LUMC"},
+        "affiliations": [{"name": "LUMC"}],
         "orcid": "0000-0002-1825-0097",
+        "roles": ["Original author", "Maintainer", "Principal investigator"],
     }
     project_path = render_python_project(
         tmp_path,
         monkeypatch,
-        maintainers={"entries": [overlapping_person]},
-        principal_investigators={"entries": [overlapping_person]},
+        contributors={"entries": [overlapping_person]},
     )
 
     codemeta = json.loads((project_path / "codemeta.json").read_text())
@@ -2972,34 +3398,29 @@ def test_python_people_metadata_accepts_structured_names(tmp_path, monkeypatch):
     project_path = render_python_project(
         tmp_path,
         monkeypatch,
-        authors={
+        contributors={
             "entries": [
                 {
                     "name": "Ada Lovelace",
                     "given_names": "Ada",
                     "family_names": "Lovelace",
                     "email": "ada@example.org",
-                }
-            ]
-        },
-        maintainers={
-            "entries": [
+                    "roles": ["Original author"],
+                },
                 {
                     "name": "Grace Hopper",
                     "given_names": "Grace",
                     "family_names": "Hopper",
                     "email": "grace@example.org",
-                }
-            ]
-        },
-        principal_investigators={
-            "entries": [
+                    "roles": ["Maintainer"],
+                },
                 {
                     "name": "Katherine Johnson",
                     "given_names": "Katherine",
                     "family_names": "Johnson",
-                    "affiliation": {"name": "LUMC"},
-                }
+                    "affiliations": [{"name": "LUMC"}],
+                    "roles": ["Principal investigator"],
+                },
             ]
         },
         community_files={"entries": ["GOVERNANCE.md"]},
@@ -3062,10 +3483,18 @@ def test_python_template_generates_citation_metadata(tmp_path, monkeypatch):
     ]
     assert citation["contact"] == [
         {
+            "family-names": "Lovelace",
+            "given-names": "Ada",
+            "affiliation": "Leiden University Medical Center",
+            "email": "ada@example.org",
+            "orcid": "https://orcid.org/0000-0002-1825-0097",
+            "website": "https://example.org/ada",
+        },
+        {
             "name": "Research Software Team",
             "email": "rs@example.org",
             "website": "https://example.org/research-software-team",
-        }
+        },
     ]
     assert citation["identifiers"] == [
         {

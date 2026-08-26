@@ -22,6 +22,13 @@ plugins:
   - search
   # Let docs/.pages control navigation order near the content files.
   - awesome-pages
+{% if "developer" in cookiecutter.documentation_types.entries %}
+  # Generate the technical reference from public Python docstrings.
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+{% endif %}
 
 markdown_extensions:
   # Render note, warning, tip, and similar callout blocks.

@@ -26,10 +26,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ '{{' }} github.workflow {{ '}}' }}-${{ '{{' }} github.ref {{ '}}' }}
+  cancel-in-progress: true
+
 jobs:
   quality:
     name: Run quality checks
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: ./.github/actions/setup-python-project

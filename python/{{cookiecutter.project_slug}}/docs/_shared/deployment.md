@@ -9,6 +9,9 @@
 {% set has_portal = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values %}
 {% set has_web = "Web application" in interface_types.values or "Workbench" in interface_types.values %}
 {% set has_http = has_api_app or has_soap or has_portal or has_web %}
+{% set has_openapi_interface = has_api_app or has_portal or has_web %}
+{% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
+{% set has_runtime_configuration = has_http or cookiecutter.security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
 # Deployment notes
 
 ## Package installation
@@ -19,6 +22,21 @@ Build and install the package in a clean environment before deployment:
 python -m pip install .
 ```
 
+{% if has_runtime_configuration %}
+## Runtime configuration
+
+`{{ cookiecutter.project_slug }}.config.Settings` validates environment and
+logging settings. Use `.env.example` as the local configuration inventory. In
+deployed environments, provide the same project-prefixed variables through the
+platform configuration or secrets manager rather than shipping a `.env` file.
+For HTTP projects, `SERVER_HOST` and `SERVER_PORT` control socket binding,
+and `SERVER_ROOT_PATH` supports path-based reverse proxies.
+{% if has_openapi_interface %}
+`PUBLIC_BASE_URL` publishes the externally visible URL in OpenAPI metadata.
+{% endif %}
+
+{% endif %}
+
 {% if has_http %}
 ## HTTP service
 
@@ -27,7 +45,7 @@ with an ASGI server:
 
 ```bash
 @@PROJECT_SETUP_ALL@@
-@@PROJECT_RUN@@uvicorn {{ cookiecutter.project_slug }}.adapters.server:app
+@@PROJECT_RUN@@{{ cookiecutter.project_slug | replace('_', '-') }}-serve
 ```
 
 Configure the production process manager, host, port, logging, and HTTPS

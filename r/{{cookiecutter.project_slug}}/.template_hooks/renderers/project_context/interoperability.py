@@ -48,14 +48,13 @@ def format_software_function_label(software_function):
     str
         Human-readable software-function label.
     """
-    summary = software_function.get("summary", "")
     operations = software_function.get("operation", [])
     inputs = software_function.get("input", [])
     outputs = software_function.get("output", [])
     command = software_function.get("cmd", "")
     note = software_function.get("note", "")
 
-    if not any((summary, operations, inputs, outputs, command, note)):
+    if not any((operations, inputs, outputs, command, note)):
         return ""
 
     operation_labels = [
@@ -74,10 +73,8 @@ def format_software_function_label(software_function):
         if (label := format_function_io_label(output_record))
     ]
 
-    label = summary or ", ".join(operation_labels) or "Function"
+    label = ", ".join(operation_labels) or "Function"
     details = []
-    if operation_labels and summary:
-        details.append(f"operation: {', '.join(operation_labels)}")
     if input_labels:
         details.append(f"input: {', '.join(input_labels)}")
     if output_labels:
@@ -330,13 +327,11 @@ def build_function_details(software_function):
     str
         Markdown section, or an empty string.
     """
-    label = software_function.get("summary", "")
-    if not label:
-        label = ", ".join(
-            operation.get("term", "")
-            for operation in software_function.get("operation", [])
-            if operation.get("term")
-        )
+    label = ", ".join(
+        operation.get("term", "")
+        for operation in software_function.get("operation", [])
+        if operation.get("term")
+    )
     if not label:
         label = "Software function"
 

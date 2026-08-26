@@ -11,7 +11,7 @@ generated project.
 ## What to expect
 
 - A language-appropriate project structure.
-- Public metadata such as name, description, license, authors, and repository links.
+- Public metadata such as name, description, license, contributors, and repository links.
 - Optional documentation, tests, CI, and interface scaffolds based on the context used.
 - Optional community files, pull request templates, and issue forms when
   collaboration support is included.

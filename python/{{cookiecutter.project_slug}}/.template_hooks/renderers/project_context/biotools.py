@@ -130,7 +130,7 @@ def render_cmd_yaml(command):
     return lines
 
 
-def software_function_summary(software_function):
+def software_function_label(software_function):
     """Return a short display label for one software function.
 
     Parameters
@@ -141,11 +141,8 @@ def software_function_summary(software_function):
     Returns
     -------
     str
-        Summary for a details block.
+        Label for a details block.
     """
-    if software_function.get("summary"):
-        return software_function["summary"]
-
     operations = [
         operation.get("term", "")
         for operation in software_function.get("operation", [])
@@ -187,10 +184,10 @@ def build_biotools_function_block(software_function):
     if len(yaml_lines) == 1:
         return ""
 
-    summary = software_function_summary(software_function)
+    label = software_function_label(software_function)
     yaml_block = "\n".join(yaml_lines)
     return (
-        f"<details>\n<summary>{summary}</summary>\n\n"
+        f"<details>\n<summary>{label}</summary>\n\n"
         f"```yaml\n{yaml_block}\n```\n\n</details>"
     )
 

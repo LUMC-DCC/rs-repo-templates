@@ -11,6 +11,3 @@ __pycache__/
 
 # Built repository documentation
 site/
-
-# Local working files
-misc/

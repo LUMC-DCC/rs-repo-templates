@@ -9,8 +9,8 @@ license = "Apache-2.0"
 readme = "README.md"
 requires-python = ">=3.14,<4.0"
 dependencies = [
-    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@0b033ce05c388310cdfa86c24eddd521f097a0b0",
-    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@8b8ac019bd8eb9978ac13c0d0df626a290ac3cdf",
+    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@5bdcbcbc4383d352a1385065265f970e9fd361ea",
+    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@cb90caa88ca839f4828dada5945e70ab54730564",
 ]
 
 [project.urls]
@@ -35,6 +35,7 @@ mkdocs = "^1.6.1"
 sphinx = ">=8,<9"
 myst-parser = ">=4,<5"
 sphinx-book-theme = ">=1,<2"
+mkdocstrings = {version = ">=0.30,<1", extras = ["python"]}
 
 
 [tool.poetry.group.dev.dependencies]
@@ -43,6 +44,7 @@ pytest = "^9.1.1"
 cookiecutter = "^2.7.1"
 rs-metadata = {git = "https://github.com/LUMC-DCC/rs-metadata.git", rev = "27f3da06c4bae5f735c492608b5ffea6c2715c21"}
 ruff = "^0.16.4"
+pydantic-settings = ">=2,<3"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

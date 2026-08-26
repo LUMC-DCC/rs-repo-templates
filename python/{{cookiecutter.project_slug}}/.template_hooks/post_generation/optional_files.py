@@ -6,6 +6,7 @@ from post_generation.documentation import (
 )
 from post_generation.quality import has_pre_commit, has_quality_checks
 from renderers.community_files import selected_community_files
+from utils.configuration import has_runtime_configuration
 from utils.containerization import has_container_recipe, has_container_type
 from utils.context import entries, object_value
 from utils.interfaces import (
@@ -26,6 +27,7 @@ from utils.interfaces import (
 )
 from utils.paths import remove_path
 from utils.release import has_python_distribution
+from utils.security import has_vulnerability_scanning
 
 
 def lacks_test_type(ctx, test_type):
@@ -103,6 +105,18 @@ def needs_python_project_setup(ctx):
 
 OPTIONAL_PATHS = [
     {
+        "path": ".env.example",
+        "should_remove": lambda ctx: not has_runtime_configuration(ctx),
+    },
+    {
+        "path": "src/{project_slug}/config.py",
+        "should_remove": lambda ctx: not has_runtime_configuration(ctx),
+    },
+    {
+        "path": "src/{project_slug}/logging_config.py",
+        "should_remove": lambda ctx: not has_runtime_configuration(ctx),
+    },
+    {
         "path": ".github/workflows/metadata.yml",
         "should_remove": lambda ctx: not ctx.get("include_metadata", False),
     },
@@ -179,6 +193,10 @@ OPTIONAL_PATHS = [
     {
         "path": ".github/workflows/quality.yml",
         "should_remove": lambda ctx: not has_quality_checks(ctx),
+    },
+    {
+        "path": ".github/workflows/security.yml",
+        "should_remove": lambda ctx: not has_vulnerability_scanning(ctx),
     },
     {
         "path": ".github/actions/setup-python-project",
@@ -275,6 +293,10 @@ OPTIONAL_PATHS = [
     },
     {
         "path": "src/{project_slug}/adapters/server.py",
+        "should_remove": lambda ctx: not has_http_interface(ctx),
+    },
+    {
+        "path": "src/{project_slug}/adapters/server_runner.py",
         "should_remove": lambda ctx: not has_http_interface(ctx),
     },
     {

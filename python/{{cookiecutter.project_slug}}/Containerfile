@@ -1,6 +1,6 @@
-{% macro container_string(value) %}
+{% macro container_string(value) -%}
 "{{ value | string | replace("\\", "\\\\") | replace("\"", "\\\"") | replace("\n", " ") }}"
-{% endmacro %}
+{%- endmacro %}
 {% set interface_types = namespace(values=[]) %}
 {% for interface in cookiecutter.interfaces.entries %}
 {% if interface.type is defined and interface.type %}
@@ -43,8 +43,16 @@ LABEL org.opencontainers.image.title={{ container_string((cookiecutter.project_n
       org.opencontainers.image.url={{ container_string(cookiecutter.urls.homepage) }}{% endif %}{% if cookiecutter.urls.documentation %} \
       org.opencontainers.image.documentation={{ container_string(cookiecutter.urls.documentation) }}{% endif %}
 
+{% if has_api or has_soap or has_web or has_portal %}
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    {{ cookiecutter.project_slug | upper }}_SERVER_HOST=0.0.0.0 \
+    {{ cookiecutter.project_slug | upper }}_SERVER_PORT=8000
+{% else %}
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+{% endif %}
+
 WORKDIR /app
 
 RUN adduser --disabled-password --gecos "" --uid 10001 appuser
@@ -54,7 +62,7 @@ RUN python -m pip install --no-cache-dir /wheels/*.whl && rm -rf /wheels
 USER appuser
 {% if has_api or has_soap or has_web or has_portal %}
 EXPOSE 8000
-CMD ["uvicorn", "{{ cookiecutter.project_slug }}.adapters.server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["{{ cookiecutter.project_slug | replace('_', '-') }}-serve"]
 {% else %}
 CMD ["python", "-m", "{{ cookiecutter.project_slug }}"]
 {% endif %}

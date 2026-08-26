@@ -27,10 +27,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ '{{' }} github.workflow {{ '}}' }}-${{ '{{' }} github.ref {{ '}}' }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     name: Run tests (${{ '{{' }} matrix.os {{ '}}' }})
     runs-on: ${{ '{{' }} matrix.os {{ '}}' }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
