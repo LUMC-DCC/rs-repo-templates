@@ -1,0 +1,42 @@
+site_name: "{{ (project_name or project_slug) }}"
+docs_dir: docs
+
+# Keep project identity and repository links current from CodeMeta or pyproject.toml.
+hooks:
+  - docs/hooks.py
+
+theme:
+  name: material
+  features:
+    # Group top-level pages as sections in the left navigation.
+    - navigation.sections
+    # Add a back-to-top button on long documentation pages.
+    - navigation.top
+    # Suggest matching search terms while typing.
+    - search.suggest
+    # Highlight matching search terms on result pages.
+    - search.highlight
+
+plugins:
+  # Keep client-side search available when explicit plugins are configured.
+  - search
+  # Let docs/.pages control navigation order near the content files.
+  - awesome-pages
+{% if "developer" in documentation_types.entries %}
+  # Generate the technical reference from public Python docstrings.
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+{% endif %}
+
+markdown_extensions:
+  # Render note, warning, tip, and similar callout blocks.
+  - admonition
+  # Add stable links to each generated heading.
+  - toc:
+      permalink: true
+  # Support collapsible admonitions with ??? syntax.
+  - pymdownx.details
+  # Improve fenced code blocks, especially when nested in admonitions.
+  - pymdownx.superfences

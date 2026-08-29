@@ -1,7 +1,8 @@
 # Generated projects
 
-Generated repositories are starting points. They include files that can be used
-immediately and files that the project team should review, complete, and adapt.
+Generated repositories are starting points that retain an update path to later
+template releases. They include files that can be used immediately and files
+that the project team should review, complete, and adapt.
 
 ## Review order
 
@@ -9,9 +10,9 @@ After generation, review the project in this order:
 
 1. Read `README.md`.
 2. Check `CITATION.cff` and `codemeta.json`, if metadata was included.
-4. Review the selected license.
-5. Open `docs/`, if documentation types were selected.
-6. Run the commands shown in the generated project.
+3. Review the selected license.
+4. Open `docs/`, if documentation types were selected.
+5. Run the commands shown in the generated project.
 
 ## Common files
 
@@ -75,12 +76,17 @@ Each workflow is included only when its corresponding generated capability is
 present. Some workflows are shared across templates, and some are
 language-specific.
 
+`.copier-answers.yml` records the template source, release, language scaffold,
+and answers. Commit it without editing it manually. The small unconditional
+`.pre-commit-config.yaml` catches unresolved template-update conflicts; selected
+quality tools add their own hooks to the same file.
+
 Python workflows read the supported Python version from `pyproject.toml`, so CI
 and package metadata stay aligned when the runtime constraint changes.
 
 | Workflow | Purpose |
 | --- | --- |
-| `metadata.yml` | Checks deterministic metadata overlaps. |
+| `metadata.yml` | Validates research software metadata and supported overlaps. |
 | `changelog.yml` | Checks changelog structure when changelog support is included. |
 | `license-compatibility.yml` | Checks dependency license compatibility when enabled. |
 | `quality.yml` | Runs selected linting, formatting, and type-checking commands. |
@@ -153,8 +159,10 @@ commands and in language-specific CI. An empty manager selection uses standard
 `pip` commands. Lockfiles are created by managers when requested; they are not
 manufactured during template generation.
 
-## Editable content
+## Project changes
 
-Generated text is intentionally conservative. Project teams should update
-README sections, documentation pages, citation metadata, examples, and tests as
-the project becomes more specific.
+Project teams should update README sections, documentation, metadata, source,
+examples, and tests as the project evolves. Copier later uses a three-way merge
+to combine those edits with template releases. Project-only files remain
+untouched; overlapping edits may require ordinary conflict resolution. See
+[Template updates](template-updates.md).

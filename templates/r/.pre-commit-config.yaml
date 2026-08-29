@@ -1,0 +1,9 @@
+repos:
+  # Keep Copier update conflicts out of commits, including conflicts produced
+  # outside an active Git merge operation.
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-merge-conflict
+        args:
+          - --assume-in-merge

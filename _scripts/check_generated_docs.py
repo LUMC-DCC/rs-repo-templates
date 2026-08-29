@@ -13,10 +13,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-from cookiecutter.main import cookiecutter
+from copier import run_copy
 
 ROOT = Path(__file__).resolve().parent.parent
-PYTHON_TEMPLATE = ROOT / "python"
 BUILD_COMMANDS = {
     "mkdocs": [sys.executable, "-m", "mkdocs", "build", "--strict"],
     "zensical": [sys.executable, "-m", "zensical", "build", "--strict"],
@@ -41,7 +40,7 @@ def render_project(builder: str, workspace: Path) -> Path:
     builder : str
         Supported documentation builder name.
     workspace : pathlib.Path
-        Temporary directory used for Cookiecutter state and output.
+        Temporary directory used for the generated project.
 
     Returns
     -------
@@ -49,39 +48,37 @@ def render_project(builder: str, workspace: Path) -> Path:
         Generated project root.
     """
     project_slug = f"generated_{builder}_docs"
-    return Path(
-        cookiecutter(
-            str(PYTHON_TEMPLATE),
-            no_input=True,
-            extra_context={
-                "project_name": f"Generated {builder.title()} Docs",
-                "project_slug": project_slug,
-                "project_short_description": (
-                    "Documentation build verification project."
-                ),
-                "documentation_builder": builder,
-                "documentation_types": {
-                    "entries": [
-                        "user",
-                        "deployment",
-                        "developer",
-                    ]
-                },
-                "test_types": {"entries": []},
-                "quality_tools": {
-                    "formatter": "",
-                    "linter": "",
-                    "type_checker": "",
-                },
-                "licensing": {"license": "", "compatibility_check": ""},
+    project_path = workspace / "output" / project_slug
+    run_copy(
+        str(ROOT),
+        project_path,
+        data={
+            "template_type": "python",
+            "project_name": f"Generated {builder.title()} Docs",
+            "project_slug": project_slug,
+            "project_short_description": ("Documentation build verification project."),
+            "documentation_builder": builder,
+            "documentation_types": {
+                "entries": [
+                    "user",
+                    "deployment",
+                    "developer",
+                ]
             },
-            output_dir=str(workspace / "output"),
-            default_config={
-                "cookiecutters_dir": str(workspace / "cookiecutters"),
-                "replay_dir": str(workspace / "replay"),
+            "test_types": {"entries": []},
+            "quality_tools": {
+                "formatter": "",
+                "linter": "",
+                "type_checker": "",
             },
-        )
+            "licensing": {"license": "", "compatibility_check": ""},
+        },
+        defaults=True,
+        overwrite=True,
+        quiet=True,
+        unsafe=True,
     )
+    return project_path
 
 
 def build_documentation(builder: str) -> None:
@@ -97,7 +94,7 @@ def build_documentation(builder: str) -> None:
     subprocess.CalledProcessError
         If the generated documentation does not build cleanly.
     """
-    with tempfile.TemporaryDirectory(prefix=f"cookiecutter-{builder}-") as tmp_dir:
+    with tempfile.TemporaryDirectory(prefix=f"copier-{builder}-") as tmp_dir:
         project_path = render_project(builder, Path(tmp_dir))
         subprocess.run(BUILD_COMMANDS[builder], cwd=project_path, check=True)
 

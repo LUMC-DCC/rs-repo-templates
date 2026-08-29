@@ -184,8 +184,8 @@ testing.
 
 Python quality tooling uses separate selectors for the formatter, linter, and
 type checker. The current Python scaffold supports `ruff` and optional `mypy`.
-When any quality check is selected, the template includes pre-commit for local
-checks and a dedicated `quality.yml` workflow for CI.
+Selected tools add local pre-commit hooks and a dedicated `quality.yml` workflow.
+Without them, pre-commit retains only the template-update conflict guard.
 
 When `security_measures.selected.entries` includes vulnerability scanning, the
 template adds `security.yml` with dependency review for pull requests and

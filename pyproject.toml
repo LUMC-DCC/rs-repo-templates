@@ -1,7 +1,7 @@
 [project]
-name = "cookiecutter-templates"
+name = "lumc-research-software-templates"
 version = "0.1.0"
-description = "Service-agnostic Cookiecutter templates for FAIR research software"
+description = "Service-agnostic Copier templates for FAIR research software"
 authors = [
     {name = "LUMC Digital Competence Center"}
 ]
@@ -42,10 +42,10 @@ zensical = "^0.0.57"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.2.0"
 pytest = "^9.1.1"
-cookiecutter = "^2.7.1"
 rs-metadata = {git = "https://github.com/LUMC-DCC/rs-metadata.git", rev = "27f3da06c4bae5f735c492608b5ffea6c2715c21"}
 ruff = "^0.16.4"
 pydantic-settings = ">=2,<3"
+copier = "^9.17.2"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -54,18 +54,12 @@ testpaths = ["tests"]
 target-version = "py314"
 line-length = 88
 extend-exclude = [
-    "python",
-    "r",
+    "templates",
     "site",
 ]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
-
-[tool.ruff.lint.per-file-ignores]
-"_cc_shared/template_hooks/context.py" = ["F821"]
-"_cc_shared/hooks/post_gen_project.py" = ["E402"]
-"_scripts/sync_shared.py" = ["E402"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"

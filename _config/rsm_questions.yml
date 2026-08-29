@@ -1,0 +1,349 @@
+project_name:
+  type: str
+  default: ''
+  help: Human-readable project title.
+project_slug:
+  type: str
+  default: '{% if template_type == ''python'' %}my_awesome_project{% elif template_type == ''r'' %}my.awesome.project{%
+    else %}project{% endif %}'
+  help: Machine-readable package and repository name. Consumers apply their own additional slug constraints.
+  validator: '{% if template_type == ''python'' and (not (project_slug | regex_search(''^[a-z][a-z0-9_]*$''))
+    or project_slug in [''and'', ''as'', ''assert'', ''async'', ''await'', ''break'', ''class'', ''continue'',
+    ''def'', ''del'', ''elif'', ''else'', ''except'', ''finally'', ''for'', ''from'', ''global'', ''if'',
+    ''import'', ''in'', ''is'', ''lambda'', ''nonlocal'', ''not'', ''or'', ''pass'', ''raise'', ''return'',
+    ''try'', ''while'', ''with'', ''yield'']) %}Use a lowercase Python identifier: start with a letter,
+    then use lowercase letters, digits, or underscores; Python keywords are not allowed.{% elif template_type
+    == ''r'' and (not (project_slug | regex_search(''^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])$'')) or project_slug
+    | length < 2) %}Use an R package name of at least two ASCII letters, digits, or dots; start with a
+    letter and do not end with a dot.{% endif %}'
+project_short_description:
+  type: str
+  default: ''
+  help: One-sentence description used in README and package metadata.
+project_long_description:
+  type: str
+  default: ''
+  help: Longer public description of the project motivation and scope.
+development_status:
+  type: str
+  default: ''
+  help: Current repostatus.org lifecycle status for the software.
+  choices:
+    Not specified: ''
+    concept: concept
+    wip: wip
+    active: active
+    inactive: inactive
+    suspended: suspended
+    abandoned: abandoned
+    unsupported: unsupported
+    moved: moved
+keywords:
+  type: yaml
+  default:
+    entries: []
+  help: Public keywords used in package metadata, citation metadata, registries, and archives.
+  multiline: true
+contributors:
+  type: yaml
+  default:
+    entries: []
+  help: Everyone credited for the software, each entry declaring one or more roles. Name and roles are
+    required; entries may also include given_names, family_names, email, affiliations, orcid, and url.
+    A non-empty list must credit at least one author, which is what citation metadata requires.
+  multiline: true
+funding:
+  type: yaml
+  default:
+    entries: []
+  help: Public funding records. Entries may include funder, award_number, award_title, grant_url, and
+    project_code.
+  multiline: true
+motivation:
+  type: yaml
+  default:
+    categories:
+      entries: []
+    purpose: ''
+    problem_statement: ''
+    value_proposition: ''
+  help: Public purpose, purpose categories, problem statement, and value proposition.
+  multiline: true
+audiences:
+  type: yaml
+  default:
+    entries: []
+  help: Intended users or stakeholder groups.
+  multiline: true
+related_software:
+  type: yaml
+  default:
+    entries: []
+  help: Related or upstream tools. Entries may include name, url_or_doi, and relationship.
+  multiline: true
+urls:
+  type: yaml
+  default:
+    repository: ''
+    homepage: ''
+    documentation: ''
+  help: Canonical source repository, project homepage, and published documentation URLs.
+  multiline: true
+registries:
+  type: yaml
+  default:
+    entries: []
+  help: Registry entries such as PyPI, CRAN, bio.tools, WorkflowHub, or institutional catalogues. Entries
+    may include name, url_or_id, and notes.
+  multiline: true
+persistent_identifiers:
+  type: yaml
+  default:
+    entries: []
+  help: Persistent identifiers. Each entry declares its CFF identifier type and value, with an optional
+    associated version.
+  multiline: true
+publications:
+  type: yaml
+  default:
+    entries: []
+  help: Associated publications. Entries may include title, type, authors, doi, pmid, pmcid, url, citation,
+    note, and preferred.
+  multiline: true
+licensing:
+  type: yaml
+  default:
+    license: ''
+    compatibility_check: ''
+  help: License text or SPDX identifier and the selected dependency-license compatibility method.
+  multiline: true
+include_metadata:
+  type: bool
+  default: false
+  help: Whether the project publishes CodeMeta and Citation File Format metadata files alongside their
+    validation workflow.
+documentation_builder:
+  type: str
+  default: ''
+  help: Optional documentation site generator. An empty selection means documentation is plain Markdown.
+  choices:
+    Not specified: ''
+    mkdocs: mkdocs
+    pkgdown: pkgdown
+    sphinx: sphinx
+    zensical: zensical
+documentation_types:
+  type: yaml
+  default:
+    entries: []
+  help: SMP documentation categories the project provides. API and technical reference material are part
+    of developer documentation.
+  multiline: true
+community_files:
+  type: yaml
+  default:
+    entries: []
+  help: Standard root community files the project provides. CONTRIBUTING.md and SUPPORT.md imply the corresponding
+    GitHub collaboration files.
+  multiline: true
+support_routes:
+  type: yaml
+  default:
+    entries: []
+  help: Public support, bug-reporting, or feature-request systems and their public URLs.
+  multiline: true
+contacts:
+  type: yaml
+  default:
+    community: ''
+    code_of_conduct: ''
+    security: ''
+  help: Public contact routes for general community, code-of-conduct, and private security reports.
+  multiline: true
+governance_notes:
+  type: str
+  default: ''
+  help: Public governance and decision-making notes.
+programming_languages:
+  type: yaml
+  default:
+    entries: []
+  help: Programming languages used by the project. Entries include a name and may include version_constraint
+    and role from the SMP.
+  multiline: true
+software_functions:
+  type: yaml
+  default:
+    entries: []
+  help: Functions or operations performed by the software. Entries may include summary, operation, input,
+    output, cmd, and note.
+  multiline: true
+interfaces:
+  type: yaml
+  default:
+    entries: []
+  help: Interfaces exposed by the software. Type names the interface; specification and status describe
+    it.
+  multiline: true
+operating_systems:
+  type: yaml
+  default:
+    entries: []
+  help: Supported operating systems or platforms. Entries may include name, specification, and status
+    from the SMP.
+  multiline: true
+external_dependencies:
+  type: yaml
+  default:
+    entries: []
+  help: External software dependencies or standards. Entries may include name, version_constraint, url,
+    license, and purpose.
+  multiline: true
+external_services:
+  type: yaml
+  default:
+    entries: []
+  help: External public services, partners, or roles needed by the project. Entries may include name,
+    provider, service_types, quantity, and cost_coverage.
+  multiline: true
+test_types:
+  type: yaml
+  default:
+    entries: []
+  help: Types of tests used or desired. Supported values match the SMP testing checklist.
+  multiline: true
+test_frameworks:
+  type: yaml
+  default:
+    entries: []
+  help: Testing frameworks used by the project.
+  multiline: true
+quality_tools:
+  type: yaml
+  default:
+    formatter: ''
+    linter: ''
+    type_checker: ''
+  help: Optional primary formatter, linter, and static type checker.
+  multiline: true
+project_manager:
+  type: str
+  default: ''
+  help: Primary project and dependency manager, which determines setup, command execution, lockfile handling,
+    and CI.
+  choices:
+    Not specified: ''
+    uv: uv
+    poetry: poetry
+    pdm: pdm
+    hatch: hatch
+    pixi: pixi
+    pip: pip
+    renv: renv
+    rix: rix
+    cargo: cargo
+    npm: npm
+    pnpm: pnpm
+    yarn: yarn
+    maven: maven
+    gradle: gradle
+    cmake: cmake
+versioning:
+  type: yaml
+  default:
+    version: ''
+    scheme: ''
+    scheme_details: ''
+    release_frequency: ''
+  help: Version value and public release policy. Empty properties leave the policy unspecified.
+  multiline: true
+distribution_channels:
+  type: yaml
+  default:
+    entries: []
+  help: Controlled public distribution routes, including package registries, releases, archives, installers,
+    and hosted services.
+  multiline: true
+containerization:
+  type: yaml
+  default:
+    entries: []
+  help: Container recipes the project ships. Project managers and lockfiles are declared separately.
+  multiline: true
+resource_requirements:
+  type: str
+  default: ''
+  help: Public typical and worst-case memory, storage, compute, GPU, wall-clock, or scaling requirements.
+maintenance_level:
+  type: str
+  default: ''
+  help: Public maintenance commitment after active development winds down; leave empty when no commitment
+    is declared.
+  choices:
+    Not specified: ''
+    Active/routine maintenance: Active/routine maintenance
+    Security maintenance only: Security maintenance only
+    Best-effort maintenance / no timeline commitment: Best-effort maintenance / no timeline commitment
+continuity_plan:
+  type: str
+  default: ''
+  help: Public continuity or handover plan.
+retirement_criteria:
+  type: yaml
+  default:
+    entries: []
+  help: Public conditions under which the software may be retired.
+  multiline: true
+public_risk_notes:
+  type: str
+  default: ''
+  help: Public risk or mitigation notes. Sensitive security, privacy, or compliance details should not
+    be included.
+regulatory_requirements:
+  type: yaml
+  default:
+    selected:
+      entries: []
+    additional: ''
+  help: Controlled and additional public regulatory, quality, policy, or availability requirements.
+  multiline: true
+security_measures:
+  type: yaml
+  default:
+    selected:
+      entries: []
+    additional: ''
+  help: Controlled and additional public security measures protecting the software and its data.
+  multiline: true
+data_management:
+  type: yaml
+  default:
+    sensitive_data_statement: ''
+    dmp_reference: ''
+  help: Public sensitive-data statement and DMP reference or contact route.
+  multiline: true
+template_defaults:
+  type: yaml
+  default: '{% if template_type == ''python'' %}{"project_slug": "my_awesome_project"}{% elif template_type
+    == ''r'' %}{"project_slug": "my.awesome.project"}{% else %}{}{% endif %}'
+  when: false
+template_schemas:
+  type: yaml
+  default: '{% if template_type == ''python'' %}{"project_slug": {"pattern": "^[a-z][a-z0-9_]*$", "not":
+    {"enum": ["and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif",
+    "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal",
+    "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"]}, "description": "Use a lowercase
+    Python identifier: start with a letter, then use lowercase letters, digits, or underscores; Python
+    keywords are not allowed."}}{% elif template_type == ''r'' %}{"project_slug": {"minLength": 2, "pattern":
+    "^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])$", "description": "Use an R package name of at least two ASCII
+    letters, digits, or dots; start with a letter and do not end with a dot."}}{% else %}{}{% endif %}'
+  when: false
+template_supported_choices:
+  type: yaml
+  default: '{% if template_type == ''python'' %}{"documentation_builder": ["mkdocs", "zensical", "sphinx"],
+    "test_frameworks": ["pytest"], "quality_tools": {"formatter": ["ruff"], "linter": ["ruff"], "type_checker":
+    ["mypy"]}, "project_manager": ["uv", "poetry", "pdm", "hatch", "pixi", "pip"]}{% elif template_type
+    == ''r'' %}{"documentation_builder": ["pkgdown"], "test_frameworks": ["testthat"], "quality_tools":
+    {"formatter": [], "linter": [], "type_checker": []}, "project_manager": ["renv", "rix"]}{% else %}{}{%
+    endif %}'
+  when: false

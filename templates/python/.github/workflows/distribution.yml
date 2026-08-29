@@ -1,0 +1,83 @@
+name: Distribution
+{% set channels = namespace(values=[]) %}
+{% for channel in distribution_channels.entries %}
+{% set _ = channels.values.append(channel | lower) %}
+{% endfor %}
+{% set publish_pypi = "pypi" in channels.values %}
+{% set publish_github = "github releases" in channels.values or "github release" in channels.values %}
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - "**"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ '{{' }} github.workflow {{ '}}' }}-${{ '{{' }} github.ref {{ '}}' }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-python-project
+      - name: Validate version policy
+        run: @@PROJECT_RUN@@python tools/check_release.py
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: @@PROJECT_RUN@@python tools/check_release.py --tag "${GITHUB_REF_NAME}"
+      - name: Build package
+        run: @@PROJECT_RUN@@python -m build
+      - name: Check package metadata
+        run: @@PROJECT_RUN@@python -m twine check dist/*
+      - name: Store distributions
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: python-distributions
+          path: dist/
+{% if publish_pypi %}
+  publish-pypi:
+    name: Publish to PyPI
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/project/{{ project_slug | replace('_', '-') }}/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: python-distributions
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+{% endif %}
+{% if publish_github %}
+  publish-github-release:
+    name: Publish GitHub release
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: python-distributions
+          path: dist/
+      - name: Create release and attach distributions
+        env:
+          GH_TOKEN: ${{ '{{' }} secrets.GITHUB_TOKEN {{ '}}' }}
+        run: gh release create "${GITHUB_REF_NAME}" dist/* --generate-notes
+{% endif %}

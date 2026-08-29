@@ -5,8 +5,7 @@ project that was generated from these templates.
 
 The generated repositories should give you a sensible starting point: package
 layout, metadata, documentation, tests, CI, and FAIR-oriented files where
-applicable. You should not need to know Cookiecutter internals to use the
-generated project.
+applicable. You only need Copier when applying a later template release.
 
 ## What to expect
 
@@ -20,6 +19,7 @@ generated project.
 ## Where to go next
 
 - [Generated projects](generated-projects.md): common files and first steps after generation.
+- [Template updates](template-updates.md): apply reviewed releases without losing project work.
 - [Metadata](metadata.md): information about generated metadata.
 - [Python template](python.md): Python-specific structure, commands, and metadata.
 - [Documentation builders](options/documentation-builders.md): what changes depending on selected documentation builder.

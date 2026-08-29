@@ -23,7 +23,7 @@ For every model below:
 - **RSM fields:** `programming_languages`, `project_manager`
 - **Content:** always update pinned GitHub Actions; add only package ecosystems
   that can be derived confidently from the selected manager or languages.
-- **Source to migrate:** `_cc_shared/.github/dependabot.yml`
+- **Source to migrate:** `templates/*/.github/dependabot.yml`
 - **Important behavior:** keep weekly grouped updates, deduplicate ecosystems,
   and do not guess an ecosystem for unsupported managers. A small package-local
   mapping is preferable to exposing generator-private fields.
@@ -36,7 +36,7 @@ For every model below:
 - **Content:** read-only permissions, push and pull-request triggers,
   concurrency cancellation, a job timeout, checkout, and the immutable
   `LUMC-DCC/rs-metadata` action reference.
-- **Source to migrate:** `_cc_shared/.github/workflows/metadata.yml`
+- **Source to migrate:** `templates/*/.github/workflows/metadata.yml`
 - **Important behavior:** the consumer omits this file when metadata is not
   selected. Keep action references in one tested constants module so automated
   dependency updates can refresh them.
@@ -49,7 +49,7 @@ For every model below:
 - **Content:** validate Keep a Changelog headings, release dates, Unreleased
   ordering, and reference labels without deciding whether a change deserves an
   entry.
-- **Source to migrate:** `_cc_shared/tools/check_changelog.py`
+- **Source to migrate:** `templates/*/tools/check_changelog.py`
 - **Important behavior:** keep the validator importable for unit tests and the
   `main()` function usable by CI. Test valid, missing, malformed, and yanked
   release headings.
@@ -62,7 +62,7 @@ For every model below:
 - **Content:** read-only permissions, push and pull-request triggers,
   concurrency cancellation, a job timeout, Python setup, and execution of the
   generated changelog checker.
-- **Source to migrate:** `_cc_shared/.github/workflows/changelog.yml`
+- **Source to migrate:** `templates/*/.github/workflows/changelog.yml`
 - **Important behavior:** the consumer emits both the checker and workflow only
   when `CHANGELOG.md` is selected.
 
@@ -75,7 +75,7 @@ For every model below:
   for languages supported by CodeQL, with minimal permissions, concurrency,
   timeouts, and immutable action references.
 - **Source to migrate:**
-  `python/{{cookiecutter.project_slug}}/.github/workflows/security.yml`
+  `templates/python/.github/workflows/security.yml`
 - **Important behavior:** emit only when vulnerability scanning is selected;
   map controlled language names to CodeQL identifiers; omit unsupported
   languages rather than guessing; omit the CodeQL job when no selected language
@@ -87,6 +87,6 @@ For every model below:
 2. Dependabot configuration.
 3. Security workflow after the language-to-CodeQL mapping is agreed.
 
-After each upstream release, replace the matching sync-map entries or local
-templates here with package rendering and keep one generation-level integration
-test per migrated file family.
+After each upstream release, replace the matching local templates here with
+package rendering and keep one generation-level integration test per migrated
+file family.

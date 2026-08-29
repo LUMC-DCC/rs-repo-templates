@@ -1,4 +1,4 @@
-"""Generation tests for the Python Cookiecutter template.
+"""Generation tests for the Python Copier template.
 
 The tests render representative Python projects and validate the generated
 files, metadata, import behavior, and generated test suite.
@@ -8,6 +8,7 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tomllib
@@ -15,12 +16,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from cookiecutter.main import cookiecutter
+from copier import run_copy
 from jsonschema import Draft7Validator
 from rs_metadata.vocabulary import cff_schema
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_TEMPLATE = ROOT / "python"
+COPIER_SOURCE = ROOT
 SPDX_LICENSE_TEXT = "MIT License\n\nPermission is hereby granted for testing."
 COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
 
@@ -421,6 +422,47 @@ BASE_CONTEXT = {
 }
 
 
+@pytest.fixture(scope="session", autouse=True)
+def isolated_copier_source(tmp_path_factory):
+    """Use one non-Git template copy for fast behavioral generation tests.
+
+    Parameters
+    ----------
+    tmp_path_factory : pytest.TempPathFactory
+        Factory for the session-scoped template directory.
+
+    Yields
+    ------
+    pathlib.Path
+        Isolated Copier source used by this module.
+    """
+    global COPIER_SOURCE
+    source = tmp_path_factory.mktemp("copier-source")
+    for directory in ("_config", "_copier_tasks", "templates"):
+        shutil.copytree(ROOT / directory, source / directory)
+    shutil.copy2(ROOT / "copier.yml", source / "copier.yml")
+    COPIER_SOURCE = source
+    yield source
+    COPIER_SOURCE = ROOT
+
+
+def finalize_project(project_path: Path) -> None:
+    """Run the shared Copier finalizer in the current test process.
+
+    Parameters
+    ----------
+    project_path
+        Rendered Python project root.
+    """
+    task_root = ROOT / "_copier_tasks"
+    sys.path.insert(0, str(task_root))
+    try:
+        from finalize import finalize
+    finally:
+        sys.path.remove(str(task_root))
+    finalize(project_path, "python")
+
+
 def render_python_project(tmp_path, monkeypatch, **overrides):
     """Render the Python template in an isolated temporary directory.
 
@@ -429,7 +471,7 @@ def render_python_project(tmp_path, monkeypatch, **overrides):
     tmp_path : pathlib.Path
         Pytest temporary directory.
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to isolate Cookiecutter's home and replay directories.
+        Fixture used to isolate Copier's user configuration.
     **overrides
         Context values that override ``BASE_CONTEXT``.
 
@@ -477,19 +519,19 @@ def render_python_project(tmp_path, monkeypatch, **overrides):
 
     output_dir = tmp_path / "generated"
     context = BASE_CONTEXT | overrides
-
-    return Path(
-        cookiecutter(
-            str(PYTHON_TEMPLATE),
-            no_input=True,
-            extra_context=context,
-            output_dir=str(output_dir),
-            default_config={
-                "cookiecutters_dir": str(tmp_path / "cookiecutters"),
-                "replay_dir": str(tmp_path / "replay"),
-            },
-        )
+    project_path = output_dir / context["project_slug"]
+    run_copy(
+        str(COPIER_SOURCE),
+        project_path,
+        data={"template_type": "python"} | context,
+        defaults=True,
+        overwrite=True,
+        quiet=True,
+        unsafe=True,
+        skip_tasks=True,
     )
+    finalize_project(project_path)
+    return project_path
 
 
 def test_python_default_context_generates_sparse_working_project(
@@ -498,16 +540,16 @@ def test_python_default_context_generates_sparse_working_project(
 ):
     """Ensure untouched public defaults produce a valid sparse repository."""
     monkeypatch.setenv("HOME", str(tmp_path / "home"))
-    project_path = Path(
-        cookiecutter(
-            str(PYTHON_TEMPLATE),
-            no_input=True,
-            output_dir=str(tmp_path / "generated"),
-            default_config={
-                "cookiecutters_dir": str(tmp_path / "cookiecutters"),
-                "replay_dir": str(tmp_path / "replay"),
-            },
-        )
+    project_path = tmp_path / "generated" / "my_awesome_project"
+    run_copy(
+        str(COPIER_SOURCE),
+        project_path,
+        data={"template_type": "python"},
+        vcs_ref="HEAD",
+        defaults=True,
+        overwrite=True,
+        quiet=True,
+        unsafe=True,
     )
 
     pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
@@ -522,9 +564,10 @@ def test_python_default_context_generates_sparse_working_project(
         "tests",
         "CONTRIBUTING.md",
         ".github/workflows",
-        ".pre-commit-config.yaml",
     ):
         assert not (project_path / rel_path).exists(), rel_path
+    pre_commit = (project_path / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert "check-merge-conflict" in pre_commit
 
 
 def assert_no_template_artifacts(project_path):
@@ -537,7 +580,7 @@ def assert_no_template_artifacts(project_path):
     """
     all_paths = list(project_path.rglob("*"))
     assert not [path for path in all_paths if path.name == ".DS_Store"]
-    assert not (project_path / ".template_hooks").exists()
+    assert not (project_path / "_copier_tasks").exists()
     assert not [path for path in all_paths if "{{" in path.name or "}}" in path.name]
 
     unresolved = []
@@ -550,7 +593,7 @@ def assert_no_template_artifacts(project_path):
         if content.startswith("\n"):
             leading_blank_lines.append(path.relative_to(project_path))
         if (
-            "{{ cookiecutter" in content
+            re.search(r"(?<!\$)\{\{\s*[A-Za-z_(]", content)
             or "{% " in content
             or "@@PROJECT_" in content
             or "@@METADATA_" in content
@@ -592,7 +635,7 @@ def expected_test_dependencies(context):
     Parameters
     ----------
     context : dict
-        Rendered or requested Cookiecutter context values.
+        Rendered or requested Copier answers.
 
     Returns
     -------
@@ -637,7 +680,7 @@ def expected_runtime_dependencies(context):
     Parameters
     ----------
     context : dict
-        Rendered or requested Cookiecutter context values.
+        Rendered or requested Copier answers.
 
     Returns
     -------
@@ -685,7 +728,7 @@ def expected_quality_dependencies(context):
     Parameters
     ----------
     context : dict
-        Rendered or requested Cookiecutter context values.
+        Rendered or requested Copier answers.
 
     Returns
     -------
@@ -829,6 +872,7 @@ def assert_selected_test_files(project_path, selected_types):
                 "src/minimal_demo/main.py",
                 "src/minimal_demo/services/__init__.py",
                 "src/minimal_demo/services/processing.py",
+                ".pre-commit-config.yaml",
             ],
             [
                 "LICENSE",
@@ -847,7 +891,6 @@ def assert_selected_test_files(project_path, selected_types):
                 "SECURITY.md",
                 "SUPPORT.md",
                 "CHANGELOG.md",
-                ".pre-commit-config.yaml",
                 "tools/check_changelog.py",
                 "tools/check_release.py",
                 "Dockerfile",
@@ -967,7 +1010,13 @@ def test_python_template_generates_expected_option_sets(
         pre_commit = yaml.safe_load(
             (project_path / ".pre-commit-config.yaml").read_text(encoding="utf-8")
         )
-        assert [hook["id"] for hook in pre_commit["repos"][0]["hooks"]] == [
+        hook_ids = [
+            hook["id"]
+            for repository in pre_commit["repos"]
+            for hook in repository["hooks"]
+        ]
+        assert hook_ids == [
+            "check-merge-conflict",
             "ruff-check",
             "ruff-format",
         ]
@@ -1465,7 +1514,7 @@ def test_python_quality_selectors_keep_responsibilities_independent(
     tmp_path : pathlib.Path
         Pytest temporary directory.
     monkeypatch : pytest.MonkeyPatch
-        Fixture used to isolate Cookiecutter's home and replay directories.
+        Fixture used to isolate Copier's user configuration.
     project_slug : str
         Slug for the generated project.
     formatter_tool : str
@@ -1504,7 +1553,7 @@ def test_python_quality_selectors_keep_responsibilities_independent(
 
 
 def test_python_quality_tools_can_be_omitted(tmp_path, monkeypatch):
-    """Ensure empty quality selectors remove quality scaffolding."""
+    """Ensure empty quality selectors retain only update-safety checks."""
     project_path = render_python_project(
         tmp_path,
         monkeypatch,
@@ -1517,7 +1566,9 @@ def test_python_quality_tools_can_be_omitted(tmp_path, monkeypatch):
     assert "quality" not in pyproject["project"]["optional-dependencies"]
     assert "ruff" not in pyproject.get("tool", {})
     assert "mypy" not in pyproject.get("tool", {})
-    assert not (project_path / ".pre-commit-config.yaml").exists()
+    pre_commit = (project_path / ".pre-commit-config.yaml").read_text(encoding="utf-8")
+    assert "check-merge-conflict" in pre_commit
+    assert "repo: local" not in pre_commit
     assert not (project_path / ".github" / "workflows" / "quality.yml").exists()
 
 
@@ -2569,9 +2620,7 @@ def test_python_developer_architecture_matches_selected_components(
         security_measures={"selected": {"entries": []}, "additional": ""},
     )
 
-    developer_docs = (project_path / "docs/developer.md").read_text(
-        encoding="utf-8"
-    )
+    developer_docs = (project_path / "docs/developer.md").read_text(encoding="utf-8")
 
     assert "## Project architecture" in developer_docs
     assert "-> workflows/" in developer_docs

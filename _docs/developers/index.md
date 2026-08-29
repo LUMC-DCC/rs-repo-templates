@@ -1,6 +1,6 @@
 # For template developers
 
-This section is for maintainers of the Cookiecutter composition and language
+This section is for maintainers of the Copier composition and language
 scaffolds.
 
 ## Decide where a change belongs
@@ -10,82 +10,118 @@ scaffolds.
 | Public field, nested shape, default, or controlled value | `rsm-schema` |
 | Reusable file content or metadata mapping | `rs-files-templates` |
 | CodeMeta/CFF consistency rules | `rs-metadata` |
-| Language scaffold, capability selection, generated workflow, or assembly | this repository |
+| Language scaffold, supported capability, generated workflow, or assembly | this repository |
 
-Do not add a local public field to make one template work. Add it to RSM when it
-describes research software generally, or keep it in local policy when it only
-describes generator capability.
+Do not add a local public field to make one template work. Add general research
+software metadata to RSM; keep implementation support and language constraints
+in local policy.
 
-## Context workflow
+## Question workflow
 
-`_scripts/build_cookiecutter_context.py` reads the schema bundled with the pinned
-`rsm-schema` dependency. It turns schema defaults and top-level scalar enums into
-Cookiecutter defaults and prompts. `_config/template_policies.json` adds the
-language-specific slug constraints and supported choices stored as private hook
-metadata.
+`_scripts/build_copier_questions.py` reads the schema bundled with the pinned
+`rsm-schema` dependency and writes `_config/rsm_questions.yml`. `copier.yml`
+includes that derived file after declaring the generator-only `template_type`
+question.
 
-`_scripts/sync_shared.py --write` writes each language `cookiecutter.json` and
-mirrors shared hooks and assets. These language contexts are derived template
-inputs, not public contracts. Its `--check` mode reports drift without changing
-the worktree and is used by pre-commit and CI.
+`_config/template_policies.json` adds three kinds of local information:
 
-The synchronized copies are intentional build artifacts. A template selected
-with Cookiecutter's `directory` option must contain its own context, hooks, and
-render tree. `pre_gen_project` runs only after that template and its context
-have been selected, so it can validate generation but cannot supply missing
-template-source files. Keep shared sources canonical under `_cc_shared/` and do
-not edit their language copies directly.
+- the default and validation rules for each language's `project_slug`;
+- controlled RSM choices currently implemented by each language scaffold;
+- values exposed to Jinja and finalization as hidden computed answers.
 
-At generation time, the post-generation hook:
+The derived questions are a Copier adapter, not another public contract. Do not
+edit them directly. Regenerate after an RSM dependency or policy change:
 
-1. normalizes empty Cookiecutter scalar sentinels and validates `RSMMetadata`;
-2. applies language-specific slug and capability policy;
+```bash
+poetry run python _scripts/build_copier_questions.py --write
+```
+
+## Finalization workflow
+
+`copier.yml` renders one directory under `templates/`, then runs
+`_copier_tasks/finalize.py` from the template checkout. The task:
+
+1. reads `.copier-answers.yml` and validates `RSMMetadata`;
+2. applies language-specific constraints and supported-choice fallbacks;
 3. asks `rs-files-templates` to render selected reusable files;
-4. assembles documentation, interface scaffolds, workflows, and other local
-   files;
-5. removes template-only helpers.
+4. assembles documentation, interfaces, workflows, and local tooling;
+5. removes optional paths not selected by the answers.
+
+Keep `finalize.py` limited to orchestration. Put filesystem actions in
+`post_generation/`, content assembly in `renderers/`, and low-level adapters in
+`utils/`. These helpers remain in the template source and are not copied into a
+generated project.
+
+Tasks must be deterministic and idempotent. Copier may execute them several
+times while constructing the old, current, and new states used by an update.
+Avoid user-specific state, timestamps, or unbounded side effects. Network
+access is reserved for authoritative external content such as SPDX license
+text, and failures must stop generation rather than silently fabricate output.
+
+## Template ownership
+
+Prefer ordinary Copier-rendered files for language scaffolds. Copier can then
+merge template releases with project changes. Use a task when output comes from
+a typed upstream renderer, requires structured selection, or needs
+post-rendering composition.
+
+Do not use `_skip_if_exists` merely because a file will be edited by users; it
+also prevents future template improvements from reaching that file. Copier's
+three-way merge already preserves edits and reports genuine conflicts. Use
+skip behavior only for artifacts that are explicitly one-time and permanently
+project-owned.
+
+`.copier-answers.yml` is always generated and committed. It is Copier-owned and
+must not be hand-edited. Other generated files can be changed by project teams.
 
 ## Development workflow
 
 For an RSM field change:
 
 1. make and test the schema change in `rsm-schema`;
-2. update its pinned commit in `pyproject.toml` and refresh `poetry.lock`;
-3. update `_contracts/field_usage.json`;
-4. implement the language-specific effects and generation tests;
-5. regenerate synchronized files and field-usage docs.
+2. update its pinned commit and refresh `poetry.lock`;
+3. regenerate Copier questions;
+4. update `_contracts/field_usage.json`;
+5. implement language-specific effects and generation tests;
+6. regenerate field-usage documentation.
 
-For a reusable file change, make and test it in `rs-files-templates`, then update
-the pinned commit here. Tests in this repository should cover selection,
-schema-valid output where useful, and interactions with the generated project.
-Do not duplicate exact prose snapshots.
+For a reusable file change, implement and test it in `rs-files-templates`, then
+update the pinned dependency here. Tests in this repository should cover model
+selection and complete-project integration, not duplicate upstream prose.
 
-Keep builder-neutral documentation under the language template's
-`docs/_shared/`. Builder folders contain navigation, configuration, and
-builder-specific entry points only. Keep `post_gen_project.py` limited to
-orchestration; put actions in `post_generation/`, content assembly in
-`renderers/`, and low-level adapters in `utils/`.
+Keep builder-neutral generated documentation under `docs/_shared/`. Builder
+folders contain only navigation, configuration, and entry points.
+
+## Releases and updates
+
+Copier discovers update versions from PEP 440-compatible Git tags. Release
+template changes with ordered tags such as `v1.0.0` and avoid rewriting tags.
+Production integrators should pin those tags.
+
+Every behavior change should be tested through generation. Changes that affect
+existing projects should also be exercised through `copier update`; the
+lifecycle test creates two temporary tagged template releases, preserves
+project-owned work, changes answers, and verifies the merged repository.
 
 ## Field usage
 
 Statuses in `_contracts/field_usage.json` are curated per template:
 
-- `planned` means the RSM field is not consumed yet.
-- `control` means it selects generated paths.
-- `partial` means some intended targets are covered.
-- `implemented` means intended targets are covered by generation tests.
-- `external` means another component consumes it.
+- `planned`: the RSM field is not consumed yet.
+- `control`: it selects generated paths.
+- `partial`: some intended targets are covered.
+- `implemented`: intended targets are covered by generation tests.
+- `external`: another component consumes it.
 
-Use short target names that explain the artifact role. The generated
-[field-usage table](../contract/field-usage.md) is a reference, not a second
-maintained list.
+The generated [field-usage table](../contract/field-usage.md) is a reference,
+not a second maintained list.
 
-## Regeneration and verification
+## Verification
 
 ```bash
 poetry lock
 poetry install --with dev,docs
-poetry run python _scripts/sync_shared.py --write
+poetry run python _scripts/build_copier_questions.py --write
 poetry run python _scripts/build_field_usage_docs.py --write
 poetry run pre-commit run --all-files
 poetry run ruff check .
@@ -98,6 +134,6 @@ poetry run zensical build --strict
 git diff --check
 ```
 
-CI checks derived files without rewriting them, then runs each audit, quality,
-test, and documentation gate once. Third-party Actions remain pinned to full
-commit SHAs and are updated through Dependabot.
+CI checks derived files without rewriting them, then runs every audit, quality,
+test, generated-docs, and repository-docs gate. Third-party Actions remain
+pinned to full commit SHAs and are updated through Dependabot.
