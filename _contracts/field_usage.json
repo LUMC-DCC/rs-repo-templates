@@ -6,7 +6,7 @@
     "r": "R template"
   },
   "statuses": {
-    "external": "Consumed by callers or Cookiecutter routing rather than rendered into files.",
+    "external": "Consumed by callers or Copier routing rather than rendered into files.",
     "control": "Controls whether files or directories are included.",
     "implemented": "Currently rendered into generated project artifacts.",
     "partial": "Currently rendered, but additional relevant artifacts are planned.",

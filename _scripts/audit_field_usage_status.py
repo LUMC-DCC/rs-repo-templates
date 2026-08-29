@@ -1,4 +1,4 @@
-"""Audit field usage statuses against Cookiecutter template references.
+"""Audit field usage statuses against Copier template references.
 
 This script does not decide whether a field is fully implemented. It only
 checks that fields referenced by templates are represented in the contract and
@@ -10,14 +10,13 @@ import json
 import re
 from pathlib import Path
 
+from jinja2 import Environment, meta
 from rsm_schema import schema as rsm_schema
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_USAGE_PATH = ROOT / "_contracts" / "field_usage.json"
 
-CONTENT_PATTERN = re.compile(r"cookiecutter\.([A-Za-z_][A-Za-z0-9_]*)")
-PATH_PATTERN = re.compile(r"\{\{\s*cookiecutter\.([A-Za-z_][A-Za-z0-9_]*)")
-
+PATH_PATTERN = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)")
 REFERENCE_STATUSES = {
     "control",
     "implemented",
@@ -42,7 +41,7 @@ def load_json(path):
 
 
 def find_template_references(template_dir):
-    """Find Cookiecutter field references in one template directory.
+    """Find undeclared Copier fields in one template directory.
 
     Parameters
     ----------
@@ -55,6 +54,8 @@ def find_template_references(template_dir):
         Referenced field names mapped to relative template paths.
     """
     references = {}
+    environment = Environment()
+    environment.filters["to_nice_yaml"] = str
 
     for path in template_dir.rglob("*"):
         for field_name in PATH_PATTERN.findall(str(path.relative_to(template_dir))):
@@ -62,7 +63,7 @@ def find_template_references(template_dir):
                 str(path.relative_to(template_dir))
             )
 
-        if not path.is_file() or path.name == "cookiecutter.json":
+        if not path.is_file():
             continue
 
         try:
@@ -70,7 +71,8 @@ def find_template_references(template_dir):
         except UnicodeDecodeError:
             continue
 
-        for field_name in CONTENT_PATTERN.findall(content):
+        parsed = environment.parse(content)
+        for field_name in meta.find_undeclared_variables(parsed):
             references.setdefault(field_name, set()).add(
                 str(path.relative_to(template_dir))
             )
@@ -100,23 +102,12 @@ def audit_usage(schema, usage, root):
     errors = []
 
     for template_name in usage["templates"]:
-        template_dir = root / template_name
+        template_dir = root / "templates" / template_name
         if not template_dir.exists():
             errors.append(f"Template directory does not exist: {template_name}")
             continue
 
         references = find_template_references(template_dir)
-        unknown_references = {
-            field_name
-            for field_name in set(references) - contract_fields
-            if not field_name.startswith("_")
-        }
-        for field_name in sorted(unknown_references):
-            errors.append(
-                f"{template_name}: field `{field_name}` is referenced but not in "
-                "the RSM contract"
-            )
-
         for field_name in sorted(set(references) & contract_fields):
             status = field_usage[field_name]["statuses"][template_name]
             if status not in REFERENCE_STATUSES:

@@ -1,6 +1,6 @@
 [project]
-site_name = "Cookiecutter Templates"
-site_description = "Service-agnostic Cookiecutter templates for FAIR research software"
+site_name = "Research Software Templates"
+site_description = "Service-agnostic Copier templates for FAIR research software"
 site_url = "https://lumc-dcc.github.io/cookiecutter-templates"
 docs_dir = "_docs"
 repo_url = "https://github.com/LUMC-DCC/cookiecutter-templates"
@@ -12,6 +12,7 @@ nav = [
   { "For template users" = [
     "users/index.md",
     "users/generated-projects.md",
+    "users/template-updates.md",
     "users/metadata.md",
     "users/python.md",
     { "Options" = [

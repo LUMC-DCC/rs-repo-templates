@@ -1,0 +1,111 @@
+name: Set up Python project
+description: Install the selected project manager and all generated dependency groups.
+{% set effective_project_manager = project_manager if project_manager and project_manager in template_supported_choices.project_manager else "pip" %}
+{% set interface_types = namespace(values=[]) %}
+{% for interface in interfaces.entries %}
+{% if interface.type is defined and interface.type %}
+{% set _ = interface_types.values.append(interface.type) %}
+{% endif %}
+{% endfor %}
+{% set include_api_adapter = "SPARQL endpoint" in interface_types.values or "Web API" in interface_types.values or "Web service" in interface_types.values %}
+{% set include_web_adapter = "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values %}
+{% set effective_documentation_builder = documentation_builder if documentation_builder and documentation_builder in template_supported_choices.documentation_builder else "plain" %}
+{% set effective_formatter_tool = quality_tools.formatter if quality_tools.formatter in template_supported_choices.quality_tools.formatter else "" %}
+{% set effective_linter_tool = quality_tools.linter if quality_tools.linter in template_supported_choices.quality_tools.linter else "" %}
+{% set effective_type_checker = quality_tools.type_checker if quality_tools.type_checker in template_supported_choices.quality_tools.type_checker else "" %}
+{% set extras = [] %}
+{% if licensing.compatibility_check == "Yes - automated tooling" and licensing.license | trim %}
+{% set _ = extras.append("license") %}
+{% endif %}
+{% if include_api_adapter %}
+{% set _ = extras.append("api") %}
+{% endif %}
+{% if include_web_adapter %}
+{% set _ = extras.append("web") %}
+{% endif %}
+{% if test_types.entries %}
+{% set _ = extras.append("test") %}
+{% endif %}
+{% if effective_formatter_tool or effective_linter_tool or effective_type_checker %}
+{% set _ = extras.append("quality") %}
+{% endif %}
+{% set release_channels = namespace(values=[]) %}
+{% for channel in distribution_channels.entries %}
+{% set _ = release_channels.values.append(channel | lower) %}
+{% endfor %}
+{% if "pypi" in release_channels.values or "github release" in release_channels.values or "github releases" in release_channels.values or "conda-forge" in release_channels.values %}
+{% set _ = extras.append("release") %}
+{% endif %}
+{% if documentation_types.entries and effective_documentation_builder in ["mkdocs", "sphinx"] %}
+{% set _ = extras.append("docs") %}
+{% endif %}
+
+runs:
+  using: composite
+  steps:
+{% if effective_project_manager != "pixi" %}
+    - name: Set up Python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      with:
+        python-version-file: pyproject.toml
+{% endif %}
+{% if effective_project_manager == "uv" %}
+    - name: Set up uv
+      uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      with:
+        enable-cache: true
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        if [[ -f uv.lock ]]; then
+          uv sync --locked --all-extras
+        else
+          uv sync --all-extras
+        fi
+{% elif effective_project_manager == "poetry" %}
+    - name: Install Poetry
+      shell: bash
+      run: python -m pip install "poetry>=2,<3"
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        poetry config virtualenvs.in-project true
+        if [[ -f poetry.lock ]]; then
+          poetry check --lock
+        fi
+        poetry install --all-extras
+{% elif effective_project_manager == "pdm" %}
+    - name: Install PDM
+      shell: bash
+      run: python -m pip install "pdm>=2,<3"
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        if [[ -f pdm.lock ]]; then
+          pdm lock --check
+          pdm sync -G :all
+        else
+          pdm install -G :all
+        fi
+{% elif effective_project_manager == "hatch" %}
+    - name: Install Hatch
+      shell: bash
+      run: python -m pip install "hatch>=1,<2"
+    - name: Install project dependencies
+      shell: bash
+      run: |
+        if [[ -f pylock.toml ]]; then
+          hatch env lock default --check
+        fi
+        hatch env create
+{% elif effective_project_manager == "pixi" %}
+    - name: Set up Pixi and install project dependencies
+      uses: prefix-dev/setup-pixi@f00437f565399d418b0acc85936d12c1fb668347 # v0.10.1
+      with:
+        manifest-path: pyproject.toml
+        cache: true
+{% else %}
+    - name: Install project dependencies
+      shell: bash
+      run: python -m pip install -e ".[{{ extras | join(',') }}]"
+{% endif %}

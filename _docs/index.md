@@ -1,13 +1,12 @@
-# Cookiecutter templates
+# Research software templates
 
-This repository maintains reusable Cookiecutter templates for research software
-projects. The templates are designed for research software use: service-friendly,
-FAIR-aware, testable, and maintainable across languages.
+This repository maintains service-agnostic Copier templates for research
+software. They combine a published metadata contract with language-aware source
+layouts, tests, documentation, CI, community files, and FAIR metadata.
 
 ## Documentation layers
 
-- **For template users:** what a generated project contains and how to work with it.
-- **For service integrators:** how external services should call the templates and
-  which context fields they can provide.
-- **For template developers:** how to evolve the templates without breaking
-  generated projects or downstream services.
+- **For template users:** work in a generated project and apply template updates.
+- **For service integrators:** validate RSM data and call Copier safely.
+- **For template developers:** evolve questions, policies, tasks, and scaffolds.
+- **Context reference:** inspect field status and generated targets.

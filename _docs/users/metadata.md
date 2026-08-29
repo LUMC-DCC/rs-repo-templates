@@ -19,10 +19,11 @@ reported.
 
 ## After generation
 
-Cookiecutter creates the initial metadata from one validated context. After
+Copier creates the initial metadata from one validated context. After
 generation, maintain CodeMeta as the broad metadata anchor and package metadata
-as the ecosystem source for package fields. The validation workflow reports
-semantic drift between supported files.
+as the ecosystem source for package fields. Template updates merge changes to
+these files; the validation workflow reports semantic drift between supported
+formats.
 
 Mandatory profile fields that cannot be inferred contain conspicuous replacement
 placeholders in `codemeta.json`. Replace them with the project's real persistent

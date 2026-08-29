@@ -1,4 +1,4 @@
-name: Deploy cookiecutter-templates docs to GitHub Pages
+name: Deploy research software template docs to GitHub Pages
 
 on:
   push:
@@ -7,6 +7,8 @@ on:
     paths:
       - '_docs/**'
       - '_contracts/field_usage.json'
+      - '_config/template_policies.json'
+      - '_scripts/build_copier_questions.py'
       - '_scripts/build_field_usage_docs.py'
       - 'zensical.toml'
       - 'poetry.lock'

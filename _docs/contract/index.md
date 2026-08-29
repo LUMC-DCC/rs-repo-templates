@@ -7,11 +7,11 @@ matching `RSMMetadata` model and schema-inspection helpers.
 
 Only `project_slug` is required. Optional properties should be omitted when no
 value is available. Repeatable values and nested shapes are defined by the
-schema; integrators should not infer them from `cookiecutter.json`.
+schema; integrators should not infer them from Copier's questionnaire.
 
 ## Local policy
 
-The generated Cookiecutter contexts add private metadata from
+The generated Copier questions add hidden values from
 `_config/template_policies.json`:
 
 - language-specific `project_slug` constraints
@@ -43,10 +43,10 @@ completeness.
 
 ## Regeneration
 
-After changing local policy, shared hooks, or field usage, run:
+After changing local policy or field usage, run:
 
 ```bash
-poetry run python _scripts/sync_shared.py --write
+poetry run python _scripts/build_copier_questions.py --write
 poetry run python _scripts/build_field_usage_docs.py --write
 ```
 

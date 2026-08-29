@@ -1,0 +1,17 @@
+title: Documentation
+nav:
+  - index.md
+  - overview.md
+{% if "user" in documentation_types.entries %}
+  - usage.md
+{% endif %}
+{% if "deployment" in documentation_types.entries %}
+  - deployment.md
+{% endif %}
+{% if "developer" in documentation_types.entries %}
+  - developer.md
+  - reference.md
+{% endif %}
+  - documentation.md
+  - legal.md
+  - ...

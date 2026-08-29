@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -15,7 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "_config" / "template_policies.json"
 FIELD_USAGE_PATH = ROOT / "_contracts" / "field_usage.json"
 FIELD_USAGE_DOC_PATH = ROOT / "_docs" / "contract" / "field-usage.md"
-TEMPLATE_HOOKS = ROOT / "_cc_shared" / "template_hooks"
+COPIER_TASKS = ROOT / "_copier_tasks"
+QUESTION_PATH = ROOT / "_config" / "rsm_questions.yml"
+COMPUTED_QUESTIONS = {
+    "template_defaults",
+    "template_schemas",
+    "template_supported_choices",
+}
 
 
 def load_module(name: str, path: Path):
@@ -40,11 +47,11 @@ def load_module(name: str, path: Path):
 
 
 @pytest.fixture
-def context_builder():
-    """Return the Cookiecutter context builder module."""
+def question_builder():
+    """Return the Copier question builder module."""
     return load_module(
-        "build_cookiecutter_context",
-        ROOT / "_scripts" / "build_cookiecutter_context.py",
+        "build_copier_questions",
+        ROOT / "_scripts" / "build_copier_questions.py",
     )
 
 
@@ -53,16 +60,28 @@ def load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def rendered_defaults(context: dict, schema: dict) -> dict:
-    """Resolve Cookiecutter scalar choices to their first value."""
-    properties = schema["properties"]
-    return {
-        name: value[0]
-        if isinstance(value, list) and "enum" in properties[name]
-        else value
-        for name, value in context.items()
-        if name in properties
+def normalize_answer(value):
+    """Convert nullable prompt defaults to finalization sentinels."""
+    if value is None:
+        return ""
+    if isinstance(value, dict):
+        return {name: normalize_answer(item) for name, item in value.items()}
+    if isinstance(value, list):
+        return [normalize_answer(item) for item in value]
+    return value
+
+
+def rendered_defaults(question_builder, template: str) -> dict:
+    """Return public Copier defaults for one language template."""
+    policies = question_builder.load_policies(POLICY_PATH)
+    questions = question_builder.build_questions(policies=policies)
+    defaults = {
+        name: normalize_answer(deepcopy(question["default"]))
+        for name, question in questions.items()
+        if name in rsm_schema.raw["properties"]
     }
+    defaults["project_slug"] = policies[template]["defaults"]["project_slug"]
+    return defaults
 
 
 def test_published_rsm_schema_is_the_public_contract():
@@ -77,11 +96,11 @@ def test_published_rsm_schema_is_the_public_contract():
 
 def test_reusable_repository_file_models_are_integrated():
     """Ensure every reusable repository-file model is wired into generation."""
-    sys.path.insert(0, str(TEMPLATE_HOOKS))
+    sys.path.insert(0, str(COPIER_TASKS))
     try:
         from post_generation.repository_files import REPOSITORY_FILE_MODELS
     finally:
-        sys.path.remove(str(TEMPLATE_HOOKS))
+        sys.path.remove(str(COPIER_TASKS))
 
     integrated_outputs = {
         model_type.output_name for model_type in REPOSITORY_FILE_MODELS
@@ -102,44 +121,35 @@ def test_reusable_repository_file_models_are_integrated():
     }
 
 
-def test_cookiecutter_contexts_are_derived_from_rsm(context_builder):
-    """Ensure shared and language contexts match the schema adapter output."""
-    policies = context_builder.load_policies(POLICY_PATH)
-    for template in policies:
-        expected = context_builder.build_context(
-            policies=policies,
-            template=template,
-        )
-        assert load_json(ROOT / template / "cookiecutter.json") == expected
-        assert set(expected) - {
-            "__prompts__",
-            "_jinja2_env_vars",
-            "_template_name",
-            "_template_defaults",
-            "_template_schemas",
-            "_template_supported_choices",
-        } == set(rsm_schema.raw["properties"])
+def test_copier_questions_are_derived_from_rsm(question_builder):
+    """Ensure committed Copier questions match the schema adapter output."""
+    questions = question_builder.build_questions(
+        policies=question_builder.load_policies(POLICY_PATH)
+    )
+
+    assert QUESTION_PATH.read_text(encoding="utf-8") == (
+        question_builder.questions_yaml(questions)
+    )
+    assert set(questions) - COMPUTED_QUESTIONS == set(rsm_schema.raw["properties"])
 
 
-def test_cookiecutter_defaults_validate_as_rsm(context_builder):
-    """Ensure empty Cookiecutter sentinels normalize to valid RSM metadata."""
-    sys.path.insert(0, str(TEMPLATE_HOOKS))
+def test_copier_defaults_validate_as_rsm(question_builder):
+    """Ensure empty Copier defaults normalize to valid RSM metadata."""
+    sys.path.insert(0, str(COPIER_TASKS))
     try:
         from utils.rsm import rsm_payload
     finally:
-        sys.path.remove(str(TEMPLATE_HOOKS))
+        sys.path.remove(str(COPIER_TASKS))
 
-    schema = dict(rsm_schema.raw)
-    for template in context_builder.load_policies(POLICY_PATH):
-        context = context_builder.build_context(template=template)
-        defaults = rendered_defaults(context, schema)
+    for template in question_builder.load_policies(POLICY_PATH):
+        defaults = rendered_defaults(question_builder, template)
         payload = rsm_payload(defaults, RSMMetadata.model_fields)
         RSMMetadata.model_validate(payload)
 
 
-def test_language_policies_only_narrow_published_choices(context_builder):
+def test_language_policies_only_narrow_published_choices(question_builder):
     """Ensure local capabilities remain subsets of published RSM choices."""
-    policies = context_builder.load_policies(POLICY_PATH)
+    policies = question_builder.load_policies(POLICY_PATH)
     properties = rsm_schema.raw["properties"]
     allowed = {
         "documentation_builder": set(properties["documentation_builder"]["enum"]),
@@ -158,45 +168,31 @@ def test_language_policies_only_narrow_published_choices(context_builder):
             assert set(choices) <= set(quality[tool_name]["enum"])
 
 
-def test_language_slug_constraints_are_enforced(context_builder):
+def test_language_slug_constraints_are_enforced(question_builder):
     """Ensure each language applies its own repository-name constraints."""
-    sys.path.insert(0, str(TEMPLATE_HOOKS))
+    sys.path.insert(0, str(COPIER_TASKS))
     try:
         validator = load_module(
             "template_context_validation",
-            TEMPLATE_HOOKS / "post_generation" / "validation.py",
+            COPIER_TASKS / "post_generation" / "validation.py",
         )
     finally:
-        sys.path.remove(str(TEMPLATE_HOOKS))
+        sys.path.remove(str(COPIER_TASKS))
 
-    python_context = context_builder.build_context(template="python")
-    r_context = context_builder.build_context(template="r")
-    validator.validate_context(
-        rendered_defaults(python_context, dict(rsm_schema.raw))
-        | {
-            "project_slug": "valid_package",
-            "_template_name": "python",
-            "_template_schemas": python_context["_template_schemas"],
-        }
-    )
-    validator.validate_context(
-        rendered_defaults(r_context, dict(rsm_schema.raw))
-        | {
-            "project_slug": "Valid.Package",
-            "_template_name": "r",
-            "_template_schemas": r_context["_template_schemas"],
-        }
-    )
+    policies = question_builder.load_policies(POLICY_PATH)
+    python_context = rendered_defaults(question_builder, "python") | {
+        "_template_name": "python",
+        "_template_schemas": policies["python"]["field_schemas"],
+    }
+    r_context = rendered_defaults(question_builder, "r") | {
+        "_template_name": "r",
+        "_template_schemas": policies["r"]["field_schemas"],
+    }
+    validator.validate_context(python_context | {"project_slug": "valid_package"})
+    validator.validate_context(r_context | {"project_slug": "Valid.Package"})
 
     with pytest.raises(ValueError, match=r"Invalid 'project_slug'.*python"):
-        validator.validate_context(
-            rendered_defaults(python_context, dict(rsm_schema.raw))
-            | {
-                "project_slug": "invalid-name",
-                "_template_name": "python",
-                "_template_schemas": python_context["_template_schemas"],
-            }
-        )
+        validator.validate_context(python_context | {"project_slug": "invalid-name"})
 
 
 def test_field_usage_covers_the_published_schema():

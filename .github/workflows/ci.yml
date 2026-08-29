@@ -37,7 +37,7 @@ jobs:
 
       - name: Check derived files
         run: |
-          poetry run python _scripts/sync_shared.py --check
+          poetry run python _scripts/build_copier_questions.py --check
           poetry run python _scripts/build_field_usage_docs.py --check
 
       - name: Audit field usage statuses
