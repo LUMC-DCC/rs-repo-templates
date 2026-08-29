@@ -2548,6 +2548,42 @@ def test_python_documentation_builder_scaffolds_are_selected(
         assert build.returncode == 0, build.stdout + build.stderr
 
 
+def test_python_developer_architecture_matches_selected_components(
+    tmp_path,
+    monkeypatch,
+):
+    """Ensure architecture docs describe only generated technical components."""
+    project_path = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_slug="architecture_demo",
+        documentation_builder="",
+        documentation_types={"entries": ["developer"]},
+        interfaces={
+            "entries": [
+                {"type": "Ontology"},
+                {"type": "Workflow"},
+            ],
+        },
+        test_types={"entries": []},
+        security_measures={"selected": {"entries": []}, "additional": ""},
+    )
+
+    developer_docs = (project_path / "docs/developer.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "## Project architecture" in developer_docs
+    assert "-> workflows/" in developer_docs
+    assert "`src/architecture_demo/workflows/`" in developer_docs
+    assert "`src/architecture_demo/ontology/`" in developer_docs
+    assert "-> adapters/" not in developer_docs
+    assert "`src/architecture_demo/adapters/`" not in developer_docs
+    assert "`scripts/`" not in developer_docs
+    assert "`tests/`" not in developer_docs
+    assert "`.env.example`" not in developer_docs
+
+
 def test_python_empty_documentation_builder_uses_plain_markdown(tmp_path, monkeypatch):
     """Ensure Python docs can be scaffolded without a builder."""
     project_path = render_python_project(
@@ -3223,6 +3259,15 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
     assert "## Function metadata" in docs_developer
     assert "[Functions and operations](functions.md)" in docs_developer
     assert "`biotools-function` metadata blocks" in docs_developer
+    assert "## Project architecture" in docs_developer
+    assert "Runtime dependencies point inward" in docs_developer
+    assert "-> adapters/" in docs_developer
+    assert "-> scripts/" in docs_developer
+    assert "-> services/" in docs_developer
+    assert "`src/research_template_demo/services/`" in docs_developer
+    assert "`src/research_template_demo/adapters/`" in docs_developer
+    assert "`src/research_template_demo/ontology/`" not in docs_developer
+    assert "Services must not import interface adapters." in docs_developer
     assert "## Interfaces" in docs_overview
     assert (
         "- Command-line tool (Stable) - Command-line interface for local "
