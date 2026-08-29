@@ -29,50 +29,65 @@
 {% set _ = distribution_channels.values.append(channel | lower) %}
 {% endfor %}
 {% set has_distribution_workflow = "pypi" in distribution_channels.values or "github releases" in distribution_channels.values or "github release" in distribution_channels.values or "conda-forge" in distribution_channels.values %}
+{% set has_ci_workflow = cookiecutter.include_metadata or cookiecutter.test_types.entries or has_quality_checks or has_docs_workflow or "CHANGELOG.md" in cookiecutter.community_files.entries or has_license_workflow or has_security_workflow or has_container_workflow or has_distribution_workflow %}
 {% set has_http_interface = "Web API" in interface_types.values or "SPARQL endpoint" in interface_types.values or "Web service" in interface_types.values or "Bioinformatics portal" in interface_types.values or "Database portal" in interface_types.values or "Web application" in interface_types.values or "Workbench" in interface_types.values %}
 {% set configuration_security_measures = ["Secrets management (e.g., environment variables, vault)", "Secure configuration management (e.g., Infrastructure-as-Code, hardening)"] %}
 {% set has_runtime_configuration = has_http_interface or cookiecutter.security_measures.selected.entries | select("in", configuration_security_measures) | list | length > 0 %}
 # Developer guide
 
-## Architecture
+## Project architecture
 
-{{ (cookiecutter.project_name or cookiecutter.project_slug) }} uses a small layered Python package.
+{{ (cookiecutter.project_name or cookiecutter.project_slug) }} uses a `src`
+layout with a small, layered package. Runtime dependencies point inward:
+entry points translate external input, then delegate reusable behavior to the
+service layer.
 
-Core project logic lives in `src/{{ cookiecutter.project_slug }}/services/`.
-{% if has_adapter %}
-Code that translates a public interface into service calls lives under
-`src/{{ cookiecutter.project_slug }}/adapters/`. Keep those adapter modules thin:
-they should parse input, call services, and format output.
+```text
+public entry points
+{% if has_adapter %}    -> adapters/
+{% endif %}{% if "Script" in interface_types.values %}    -> scripts/
+{% endif %}{% if "Workflow" in interface_types.values %}    -> workflows/
+{% endif %}    -> services/
+```
 
-{% endif %}
-Reusable library functions should be exported from
-`src/{{ cookiecutter.project_slug }}/__init__.py` when they are part of the
-public Python API. Keep package `__init__.py` files as package boundaries and
-put implementation in named modules such as `services/processing.py`.
-{% if has_adapter or "Ontology" in interface_types.values or "Workflow" in interface_types.values %}
-Interface-specific implementations use names such as `app.py`, `commands/`,
-`views.py`, `repository.py`, `registry.py`, `metadata.py`, or `pipeline.py`.
-{% endif %}
+Services must not import interface adapters. This keeps project behavior usable
+from every selected interface and testable without starting a server, opening a
+window, or invoking a command. Reusable library functions can be exposed from
+`src/{{ cookiecutter.project_slug }}/__init__.py`; implementation belongs in
+named modules rather than package `__init__.py` files.
 
-| Layer | Purpose |
+### Repository layout
+
+| Path | Responsibility |
 | --- | --- |
-| `services/` | Project behavior that is independent of a specific interface. |
+| `src/{{ cookiecutter.project_slug }}/` | Importable application package and public Python API. |
+| `src/{{ cookiecutter.project_slug }}/services/` | Behavior that is independent of a delivery interface. |
 {% if has_adapter %}
-| `adapters/` | Interface-specific translation at the project boundary. |
+| `src/{{ cookiecutter.project_slug }}/adapters/` | Selected interfaces and their input/output translation. |
 {% endif %}
 {% if "Script" in interface_types.values %}
-| `scripts/` | Standalone script entry points. |
+| `scripts/` | Thin executable wrappers around package behavior. |
 {% endif %}
 {% if "Workflow" in interface_types.values %}
 | `src/{{ cookiecutter.project_slug }}/workflows/` | Importable Python workflow orchestration. |
 | `workflows/` | Engine-specific workflow definitions, examples, and workflow test inputs. |
 {% endif %}
 {% if "Ontology" in interface_types.values or "SPARQL endpoint" in interface_types.values %}
-| `ontology/` | RDF graph construction, ontology metadata, validation, and serialization. |
+| `src/{{ cookiecutter.project_slug }}/ontology/` | RDF graph construction, ontology metadata, validation, and serialization. |
+{% endif %}
+{% if has_runtime_configuration %}
+| `.env.example`, `src/{{ cookiecutter.project_slug }}/config.py` | Documented environment settings and their typed runtime boundary. |
+{% endif %}
+{% if cookiecutter.test_types.entries %}
+| `tests/` | Tests selected for this project's interfaces and test types. |
+{% endif %}
+| `docs/` | Project, user, developer, and reference documentation selected in the context. |
+{% if has_ci_workflow %}
+| `.github/workflows/` | Automation enabled by the selected project capabilities. |
 {% endif %}
 
 {% if interface_types.values %}
-## Generated interface modules
+### Selected components
 
 | Interface type | Main modules |
 | --- | --- |
