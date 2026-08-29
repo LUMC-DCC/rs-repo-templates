@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import importlib.util
+import inspect
 import json
 import sys
 from copy import deepcopy
 from pathlib import Path
 
 import pytest
+import rs_files_templates
+from rs_files_templates import FileTemplateModel, validate_contract_compatibility
 from rsm_schema import RSMMetadata
 from rsm_schema import schema as rsm_schema
 
@@ -16,9 +19,11 @@ ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "_config" / "template_policies.json"
 FIELD_USAGE_PATH = ROOT / "_contracts" / "field_usage.json"
 FIELD_USAGE_DOC_PATH = ROOT / "_docs" / "contract" / "field-usage.md"
+RSM_REFERENCE_PATH = ROOT / "_docs" / "contract" / "rsm-fields.md"
 COPIER_TASKS = ROOT / "_copier_tasks"
-QUESTION_PATH = ROOT / "_config" / "rsm_questions.yml"
-COMPUTED_QUESTIONS = {
+QUESTION_PATH = ROOT / "_config" / "copier_questions.yml"
+GENERATOR_QUESTIONS = {
+    "template_type",
     "template_defaults",
     "template_schemas",
     "template_supported_choices",
@@ -84,41 +89,36 @@ def rendered_defaults(question_builder, template: str) -> dict:
     return defaults
 
 
-def test_published_rsm_schema_is_the_public_contract():
-    """Ensure the installed stable schema is valid and has one required field."""
-    rsm_schema.validate_schema()
-
-    assert rsm_schema.raw["$id"] == (
-        "https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json"
-    )
-    assert rsm_schema.raw["required"] == ["project_slug"]
-
-
-def test_reusable_repository_file_models_are_integrated():
-    """Ensure every reusable repository-file model is wired into generation."""
+def test_reusable_file_package_matches_generator_integration(question_builder):
+    """Ensure every public reusable model is integrated and RSM-compatible."""
     sys.path.insert(0, str(COPIER_TASKS))
     try:
-        from post_generation.repository_files import REPOSITORY_FILE_MODELS
+        from post_generation.repository_files import (
+            REPOSITORY_FILE_MODELS,
+            model_from_context,
+        )
     finally:
         sys.path.remove(str(COPIER_TASKS))
 
-    integrated_outputs = {
-        model_type.output_name for model_type in REPOSITORY_FILE_MODELS
+    public_models = {
+        member
+        for name in rs_files_templates.__all__
+        if inspect.isclass(member := getattr(rs_files_templates, name))
+        and issubclass(member, FileTemplateModel)
+        and member is not FileTemplateModel
     }
-    assert integrated_outputs == {
-        ".github/ISSUE_TEMPLATE.zip",
-        ".github/pull_request_template.md",
-        ".zenodo.json",
-        "CHANGELOG.md",
-        "CITATION.cff",
-        "CODE_OF_CONDUCT.md",
-        "CONTRIBUTING.md",
-        "GOVERNANCE.md",
-        "LICENSE",
-        "SECURITY.md",
-        "SUPPORT.md",
-        "codemeta.json",
+    assert set(REPOSITORY_FILE_MODELS) == public_models
+
+    questions = question_builder.build_questions()
+    context = {
+        name: normalize_answer(deepcopy(question["default"]))
+        for name, question in questions.items()
+        if name in rsm_schema.raw["properties"]
     }
+    context["project_slug"] = "project"
+    for model_type in REPOSITORY_FILE_MODELS:
+        model = model_from_context(model_type, context)
+        validate_contract_compatibility(model, schema=rsm_schema.raw)
 
 
 def test_copier_questions_are_derived_from_rsm(question_builder):
@@ -130,7 +130,10 @@ def test_copier_questions_are_derived_from_rsm(question_builder):
     assert QUESTION_PATH.read_text(encoding="utf-8") == (
         question_builder.questions_yaml(questions)
     )
-    assert set(questions) - COMPUTED_QUESTIONS == set(rsm_schema.raw["properties"])
+    assert set(questions) - GENERATOR_QUESTIONS == set(rsm_schema.raw["properties"])
+    assert questions["template_type"]["choices"] == {
+        name.title(): name for name in question_builder.discover_templates()
+    }
 
 
 def test_copier_defaults_validate_as_rsm(question_builder):
@@ -222,3 +225,14 @@ def test_field_usage_docs_and_reference_audit_are_current():
         usage
     )
     assert audit.audit_usage(dict(rsm_schema.raw), usage, ROOT) == []
+
+
+def test_rsm_reference_is_derived_from_the_published_schema():
+    """Ensure the committed field reference matches the installed schema."""
+    reference_builder = load_module(
+        "build_rsm_reference",
+        ROOT / "_scripts" / "build_rsm_reference.py",
+    )
+    assert RSM_REFERENCE_PATH.read_text(encoding="utf-8") == (
+        reference_builder.build_reference(rsm_schema.raw)
+    )

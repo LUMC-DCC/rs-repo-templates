@@ -18,10 +18,11 @@ in local policy.
 
 ## Question workflow
 
-`_scripts/build_copier_questions.py` reads the schema bundled with the pinned
-`rsm-schema` dependency and writes `_config/rsm_questions.yml`. `copier.yml`
-includes that derived file after declaring the generator-only `template_type`
-question.
+`_scripts/maintain_repository.py` reads the schema bundled with the pinned
+`rsm-schema` dependency and writes `_config/copier_questions.yml`. It also
+discovers the generator-only `template_type` choices from the directories under
+`templates/`; `copier.yml` only contains orchestration settings and includes
+the derived questions.
 
 `_config/template_policies.json` adds three kinds of local information:
 
@@ -33,8 +34,13 @@ The derived questions are a Copier adapter, not another public contract. Do not
 edit them directly. Regenerate after an RSM dependency or policy change:
 
 ```bash
-poetry run python _scripts/build_copier_questions.py --write
+poetry run python _scripts/maintain_repository.py --write
 ```
+
+That command also regenerates the schema field reference and field-usage page,
+then checks the pinned `rs-files-templates` model inventory and its RSM contract
+compatibility. Generated artifacts carry a notice and must not be edited
+directly.
 
 ## Finalization workflow
 
@@ -80,14 +86,16 @@ For an RSM field change:
 
 1. make and test the schema change in `rsm-schema`;
 2. update its pinned commit and refresh `poetry.lock`;
-3. regenerate Copier questions;
+3. run the repository maintenance command;
 4. update `_contracts/field_usage.json`;
 5. implement language-specific effects and generation tests;
-6. regenerate field-usage documentation.
+6. run the maintenance command again.
 
 For a reusable file change, implement and test it in `rs-files-templates`, then
-update the pinned dependency here. Tests in this repository should cover model
-selection and complete-project integration, not duplicate upstream prose.
+update the pinned dependency here. The maintenance command fails if its public
+model inventory or RSM overlap no longer matches this integration. Tests in
+this repository cover model selection and complete-project integration, not
+duplicate upstream prose.
 
 Keep builder-neutral generated documentation under `docs/_shared/`. Builder
 folders contain only navigation, configuration, and entry points.
@@ -121,8 +129,7 @@ not a second maintained list.
 ```bash
 poetry lock
 poetry install --with dev,docs
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 poetry run pre-commit run --all-files
 poetry run ruff check .
 poetry run ruff format --check .

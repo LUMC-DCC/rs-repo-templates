@@ -1,15 +1,9 @@
 repos:
   - repo: local
     hooks:
-      - id: copier-questions
-        name: Check generated Copier questions
-        entry: poetry run python _scripts/build_copier_questions.py --check
-        language: system
-        pass_filenames: false
-        always_run: true
-      - id: field-usage-docs
-        name: Check generated field usage documentation
-        entry: poetry run python _scripts/build_field_usage_docs.py --check
+      - id: derived-artifacts
+        name: Check derived artifacts and generator dependencies
+        entry: poetry run python _scripts/maintain_repository.py --check
         language: system
         pass_filenames: false
         always_run: true

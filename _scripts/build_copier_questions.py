@@ -19,7 +19,8 @@ from rsm_schema import schema as rsm_schema
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_POLICY_PATH = ROOT / "_config" / "template_policies.json"
-DEFAULT_OUTPUT_PATH = ROOT / "_config" / "rsm_questions.yml"
+DEFAULT_TEMPLATE_PATH = ROOT / "templates"
+DEFAULT_OUTPUT_PATH = ROOT / "_config" / "copier_questions.yml"
 
 
 class NoAliasDumper(yaml.SafeDumper):
@@ -55,6 +56,71 @@ def load_policies(path: Path = DEFAULT_POLICY_PATH) -> dict[str, Any]:
         Policies keyed by template type.
     """
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def discover_templates(path: Path = DEFAULT_TEMPLATE_PATH) -> tuple[str, ...]:
+    """Discover language scaffolds from the template directory.
+
+    Parameters
+    ----------
+    path
+        Directory containing one subdirectory per language scaffold.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Sorted template names.
+    """
+    return tuple(sorted(item.name for item in path.iterdir() if item.is_dir()))
+
+
+def validate_policies(
+    policies: Mapping[str, Any],
+    templates: tuple[str, ...],
+) -> None:
+    """Ensure local policy covers exactly the available templates.
+
+    Parameters
+    ----------
+    policies
+        Language policies keyed by template name.
+    templates
+        Discovered language scaffold names.
+
+    Raises
+    ------
+    ValueError
+        If a scaffold lacks policy or policy names a missing scaffold.
+    """
+    policy_names = set(policies)
+    template_names = set(templates)
+    if policy_names != template_names:
+        missing_policy = sorted(template_names - policy_names)
+        missing_template = sorted(policy_names - template_names)
+        raise ValueError(
+            "Template policy and scaffold directories differ: "
+            f"missing policy={missing_policy}, missing scaffold={missing_template}."
+        )
+
+
+def template_type_question(templates: tuple[str, ...]) -> dict[str, Any]:
+    """Build the generator-only language selector.
+
+    Parameters
+    ----------
+    templates
+        Discovered language scaffold names.
+
+    Returns
+    -------
+    dict[str, Any]
+        Copier question definition.
+    """
+    return {
+        "type": "str",
+        "help": "Language scaffold to generate.",
+        "choices": {name.title(): name for name in templates},
+    }
 
 
 def field_default(field: Mapping[str, Any], *, nested: bool = False) -> Any:
@@ -198,6 +264,7 @@ def build_questions(
     schema: Mapping[str, Any] | None = None,
     *,
     policies: Mapping[str, Any] | None = None,
+    templates: tuple[str, ...] | None = None,
 ) -> dict[str, Any]:
     """Build Copier questions from RSM properties and local policies.
 
@@ -207,6 +274,8 @@ def build_questions(
         Published RSM JSON Schema.
     policies
         Language-specific rendering policies.
+    templates
+        Available language scaffold names.
 
     Returns
     -------
@@ -215,7 +284,11 @@ def build_questions(
     """
     schema_document = dict(schema or rsm_schema.raw)
     policy_document = dict(policies or load_policies())
-    questions: dict[str, Any] = {}
+    template_names = templates or discover_templates()
+    validate_policies(policy_document, template_names)
+    questions: dict[str, Any] = {
+        "template_type": template_type_question(template_names)
+    }
 
     for name, field in schema_document.get("properties", {}).items():
         question: dict[str, Any] = {

@@ -24,11 +24,5 @@ _message_after_update: |-
   Template update applied. Review the diff and resolve any conflict markers
   before committing.
 
-template_type:
-  type: str
-  help: Language scaffold to generate.
-  choices:
-    Python: python
-    R: r
 ---
-!include _config/rsm_questions.yml
+!include _config/copier_questions.yml
