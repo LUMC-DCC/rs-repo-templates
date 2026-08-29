@@ -23,6 +23,7 @@ nav = [
   { "For service integrators" = ["integrators/index.md"] },
   { "Context reference" = [
     "contract/index.md",
+    "contract/rsm-fields.md",
     "contract/field-usage.md",
   ] },
   { "For template developers" = ["developers/index.md"] },

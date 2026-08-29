@@ -1,3 +1,9 @@
+template_type:
+  type: str
+  help: Language scaffold to generate.
+  choices:
+    Python: python
+    R: r
 project_name:
   type: str
   default: ''

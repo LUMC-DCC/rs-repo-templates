@@ -1,13 +1,14 @@
 # Context reference
 
-The public context is the published
-[RSM 1.0.0 JSON Schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json).
+The public context is the published RSM JSON Schema. The generated
+[RSM field reference](rsm-fields.md) shows the fields, shapes, requiredness,
+defaults, descriptions, and controlled values from the exact pinned schema.
 Its [Python API](https://lumc-dcc.github.io/rsm-schema/api.html) provides the
 matching `RSMMetadata` model and schema-inspection helpers.
 
-Only `project_slug` is required. Optional properties should be omitted when no
-value is available. Repeatable values and nested shapes are defined by the
-schema; integrators should not infer them from Copier's questionnaire.
+Optional properties should be omitted when no value is available. Repeatable
+values and nested shapes are defined by the schema; integrators should not
+infer them from Copier's questionnaire.
 
 ## Local policy
 
@@ -46,8 +47,7 @@ completeness.
 After changing local policy or field usage, run:
 
 ```bash
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 ```
 
 Public field changes belong in `rsm-schema`. Reusable-file changes belong in

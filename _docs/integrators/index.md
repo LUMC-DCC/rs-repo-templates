@@ -1,8 +1,9 @@
 # For service integrators
 
-Integration services map their own data to the published
-[RSM 1.0.0 schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json).
-SMP, DSW, form, and API conversion stays in the integration service.
+Integration services map their own data to the published RSM schema. The
+[generated field reference](../contract/rsm-fields.md) reflects the exact
+schema version pinned by this generator. SMP, DSW, form, and API conversion
+stays in the integration service.
 
 ```text
 service data
@@ -17,6 +18,11 @@ service data
 Install Copier, `rsm-schema`, and `rs-files-templates` in the same Python
 environment. This repository's `pyproject.toml` pins the tested revisions until
 the upstream packages are published on PyPI.
+
+The latter two packages are generator-only: generated repositories do not
+depend on them. The repository maintenance and CI checks verify their public
+schema and file-model APIs together, so an incompatible pinned update fails
+before deployment rather than changing generated output silently.
 
 The template runs source-side finalization tasks, so Copier requires
 `--trust` on the command line or `unsafe=True` through its Python API. Trust

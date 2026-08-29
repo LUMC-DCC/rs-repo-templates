@@ -13,9 +13,10 @@ reference implementation; R is an early extension target.
 | This repository | Copier orchestration, language policy, source scaffolds, generated CI, and cross-component integration. |
 | [rs-metadata](https://github.com/LUMC-DCC/rs-metadata) | Validation of generated research-software metadata and cross-file consistency. |
 
-The published [RSM 1.0.0 JSON Schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json)
-is the sole public input contract. This repository does not maintain a second
-schema.
+The published RSM JSON Schema is the sole public input contract. Its current
+canonical URL and contents are exposed through the generated
+[RSM field reference](contract/rsm-fields.md); this repository does not
+maintain a second schema.
 
 `rs-files-templates` renders CodeMeta, CFF, license, Zenodo, changelog,
 community, issue, and pull request files. Their prose and format mappings are
@@ -50,11 +51,26 @@ generated repository + .copier-answers.yml
 or `templates/r`; `programming_languages` continues to describe the software
 itself and may contain several languages.
 
-`_scripts/build_copier_questions.py` derives public questions from the installed
-RSM schema. `_config/template_policies.json` contributes only language-specific
-slug constraints and supported implementation choices. The finalizer converts
-Copier's nullable answers to the empty sentinels expected by the existing
-selection helpers before validating `RSMMetadata`.
+`_scripts/maintain_repository.py` derives the complete question include and RSM
+field reference from the installed schema. It discovers `template_type` choices
+from `templates/`; `_config/template_policies.json` contributes only
+language-specific slug constraints and supported implementation choices. The
+same command verifies that every public `rs-files-templates` model is integrated
+and remains compatible with RSM.
+
+## Generator dependencies
+
+`rsm-schema` and `rs-files-templates` are intentional generator dependencies,
+not generated-project dependencies. They are pinned to reviewed Git commits in
+the repository lock file, imported only by source-side finalization, and do not
+appear in generated package manifests.
+
+This boundary keeps public schema ownership and reusable file rendering out of
+the language scaffolds. Its trade-off is that generation needs those packages
+installed and can fail when an upstream API changes. The maintenance check
+detects missing, stale, duplicate, or contract-incompatible file models before
+generation changes are merged; runtime imports also fail with an actionable
+dependency error.
 
 ## Update model
 
@@ -82,7 +98,7 @@ update markers cannot be committed accidentally.
 ## Repository layout
 
 - `copier.yml` is the single generation entry point.
-- `_config/` contains the derived RSM questions and small language policies.
+- `_config/` contains the derived Copier questions and small language policies.
 - `_contracts/field_usage.json` tracks implementation status and targets.
 - `_copier_tasks/` contains finalization actions, renderers, and utilities.
 - `templates/python/` and `templates/r/` contain language scaffolds.
@@ -91,7 +107,7 @@ update markers cannot be committed accidentally.
 
 ## Verification
 
-CI checks derived questions and field-usage documentation, audits immutable
+CI checks every derived artifact and generator dependency, audits immutable
 GitHub Action pins, runs repository quality checks, renders representative
 projects, verifies tagged Copier updates, runs generated tests, builds every
 supported Python documentation variant, and builds these docs strictly.

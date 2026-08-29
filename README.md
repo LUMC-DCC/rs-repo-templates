@@ -37,8 +37,7 @@ Copier's Git-aware three-way merge.
 ```bash
 poetry install --with docs,dev
 poetry run pre-commit install
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 poetry run pre-commit run --all-files
 poetry run ruff check .
 poetry run ruff format --check .

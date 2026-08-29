@@ -1,7 +1,7 @@
 # Field Usage
 
 This table is generated from `_contracts/field_usage.json`.
-Update the usage map first, then regenerate this page.
+Update the usage map first, then run the repository maintenance command.
 
 | Field | Python Status | R Status | Targets | Notes |
 | --- | --- | --- | --- | --- |
