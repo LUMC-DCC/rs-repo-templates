@@ -1,6 +1,9 @@
 """Apply the selected project-manager command profile."""
 
+import json
+
 from utils.project_management import (
+    optional_dependency_groups,
     project_manager_profile,
     resolve_project_manager,
     setup_all_command,
@@ -15,13 +18,15 @@ TEXT_SUFFIXES = {
 }
 
 
-def project_manager_replacements(ctx):
+def project_manager_replacements(ctx, cwd):
     """Build replacements for manager-aware generated text.
 
     Parameters
     ----------
     ctx : dict
         Normalized Copier context.
+    cwd : pathlib.Path
+        Generated project root.
 
     Returns
     -------
@@ -30,10 +35,11 @@ def project_manager_replacements(ctx):
     """
     _, effective = resolve_project_manager(ctx)
     profile = project_manager_profile(ctx)
+    dependency_groups = optional_dependency_groups(cwd)
     lockfile = profile["lockfile"]
     if profile["setup_creates_lock"]:
         lock_guidance = (
-            f"Running `{setup_all_command(ctx)}` creates or updates "
+            f"Running `{setup_all_command(ctx, cwd)}` creates or updates "
             f"`{lockfile}`. Commit the lockfile when the project requires "
             "reproducible development and deployment environments."
         )
@@ -47,7 +53,7 @@ def project_manager_replacements(ctx):
     return {
         "@@PROJECT_MANAGER@@": effective,
         "@@PROJECT_RUN@@": profile["run_prefix"],
-        "@@PROJECT_SETUP_ALL@@": setup_all_command(ctx),
+        "@@PROJECT_SETUP_ALL@@": setup_all_command(ctx, cwd),
         "@@PROJECT_SETUP_API@@": setup_group_command(ctx, "api"),
         "@@PROJECT_SETUP_DOCS@@": setup_group_command(ctx, "docs"),
         "@@PROJECT_SETUP_SOAP@@": setup_group_command(ctx, "soap"),
@@ -56,6 +62,9 @@ def project_manager_replacements(ctx):
         "@@PROJECT_LOCK@@": profile["lock"],
         "@@PROJECT_LOCKFILE@@": lockfile,
         "@@PROJECT_LOCK_GUIDANCE@@": lock_guidance,
+        '"@@PROJECT_EXTRAS_TOML@@"': ", ".join(
+            json.dumps(group) for group in dependency_groups
+        ),
     }
 
 
@@ -69,7 +78,7 @@ def replace_project_manager_tokens(ctx, cwd):
     cwd : pathlib.Path
         Generated project root.
     """
-    replace_text_tokens(cwd, project_manager_replacements(ctx))
+    replace_text_tokens(cwd, project_manager_replacements(ctx, cwd))
 
 
 def replace_text_tokens(cwd, replacements):

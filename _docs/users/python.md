@@ -50,7 +50,8 @@ pipeline.
 | `Workflow` | Top-level workflow definition folder plus Python config, IO, typed steps, and pipeline modules. |
 
 `pyproject.toml` is the source for Python package metadata and optional
-dependency groups such as `test`, `docs`, `quality`, and HTTP interface extras.
+dependency groups such as `test`, `docs`, `quality`, `security`, and HTTP
+interface extras.
 
 HTTP-facing projects, and projects that explicitly select secrets or secure
 configuration management, include a package-level typed settings module and
@@ -139,6 +140,8 @@ PyPI, the project DOI, and selected interface types.
 
 When `programming_languages` includes a Python entry with `version_constraint`,
 that value is used for `project.requires-python` in `pyproject.toml`.
+Selected container recipes derive their Python image version from the same
+constraint, choosing the lowest compatible Python 3.12-or-newer runtime.
 Without one, the Python template requires Python 3.12 or newer.
 
 When `operating_systems` includes officially supported Linux, macOS, or Windows entries,
@@ -185,10 +188,12 @@ testing.
 Python quality tooling uses separate selectors for the formatter, linter, and
 type checker. The current Python scaffold supports `ruff` and optional `mypy`.
 Selected tools add local pre-commit hooks and a dedicated `quality.yml` workflow.
-Without them, pre-commit retains only the template-update conflict guard.
+Without them, pre-commit retains repository hygiene and template-update conflict
+checks.
 
 When `security_measures.selected.entries` includes vulnerability scanning, the
-template adds `security.yml` with dependency review for pull requests and
+template adds a `security` dependency group and `security.yml`, which audits the
+installed environment, reviews dependency changes in pull requests, and runs
 scheduled CodeQL analysis.
 
 Workflow inclusion is derived from the selected capabilities; there is no

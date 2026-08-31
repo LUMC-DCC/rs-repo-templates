@@ -1,5 +1,7 @@
 """Smoke tests for the generated Python package."""
 
+from importlib.metadata import PackageNotFoundError, version
+
 {% set interface_types = namespace(values=[]) %}
 {% for interface in interfaces.entries %}
 {% if interface.type is defined and interface.type %}
@@ -19,8 +21,13 @@ from {{ project_slug }}.main import main
 
 
 def test_package_has_version():
-    """Ensure the package exposes the generated version."""
-    assert __version__ == "{{ (versioning.version or "0.1.0") }}"
+    """Ensure the package exposes its installed distribution version."""
+    try:
+        installed_version = version("{{ project_slug | replace('_', '-') }}")
+    except PackageNotFoundError:
+        installed_version = "0+unknown"
+
+    assert __version__ == installed_version
 
 
 def test_main_is_callable():

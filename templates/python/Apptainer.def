@@ -19,7 +19,7 @@
 {% set _ = install_extras.append("web") %}
 {% endif %}
 Bootstrap: docker
-From: python:3.12-slim
+From: python:@@PYTHON_CONTAINER_VERSION@@-slim
 
 %labels
     org.opencontainers.image.title {{ (project_name or project_slug) }}

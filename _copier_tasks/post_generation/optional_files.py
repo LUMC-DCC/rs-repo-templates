@@ -99,6 +99,7 @@ def needs_python_project_setup(ctx):
             has_quality_checks(ctx),
             builds_documentation,
             checks_licenses,
+            has_vulnerability_scanning(ctx),
             has_python_distribution(entries(ctx, "distribution_channels")),
         )
     )

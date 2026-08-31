@@ -14,6 +14,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  dependency-audit:
+    name: Audit installed dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: ./.github/actions/setup-python-project
+      - name: Audit known vulnerabilities
+        run: @@PROJECT_RUN@@pip-audit
+
   dependency-review:
     name: Review dependency changes
     if: github.event_name == 'pull_request'

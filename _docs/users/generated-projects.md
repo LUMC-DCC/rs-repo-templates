@@ -78,8 +78,9 @@ language-specific.
 
 `.copier-answers.yml` records the template source, release, language scaffold,
 and answers. Commit it without editing it manually. The small unconditional
-`.pre-commit-config.yaml` catches unresolved template-update conflicts; selected
-quality tools add their own hooks to the same file.
+`.pre-commit-config.yaml` checks common repository hygiene and unresolved
+template-update conflicts; selected quality tools add their own hooks to the
+same file.
 
 Python workflows read the supported Python version from `pyproject.toml`, so CI
 and package metadata stay aligned when the runtime constraint changes.
@@ -90,7 +91,7 @@ and package metadata stay aligned when the runtime constraint changes.
 | `changelog.yml` | Checks changelog structure when changelog support is included. |
 | `license-compatibility.yml` | Checks dependency license compatibility when enabled. |
 | `quality.yml` | Runs selected linting, formatting, and type-checking commands. |
-| `security.yml` | Reviews dependency changes and runs CodeQL when vulnerability scanning is selected. |
+| `security.yml` | Audits installed dependencies, reviews dependency changes, and runs CodeQL when vulnerability scanning is selected. |
 | `docs.yml` | Builds documentation when a buildable docs scaffold is included. |
 | `tests.yml` | Runs generated tests when tests are included. |
 | `containers.yml` | Builds selected container recipes and publishes configured OCI registries on release tags. |
