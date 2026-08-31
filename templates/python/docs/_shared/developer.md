@@ -331,7 +331,7 @@ The generated workflows mirror the selected project capabilities:
 | `license-compatibility.yml` | Check dependency licenses against the project license. |
 {% endif %}
 {% if has_security_workflow %}
-| `security.yml` | Review changed dependencies and run CodeQL analysis. |
+| `security.yml` | Audit installed dependencies, review dependency changes, and run CodeQL analysis. |
 {% endif %}
 {% if has_container_workflow %}
 | `containers.yml` | Build selected container recipes and publish selected registry images on tags. |

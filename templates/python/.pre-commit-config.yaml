@@ -4,9 +4,16 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-json
       - id: check-merge-conflict
         args:
           - --assume-in-merge
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
 {% set effective_formatter_tool = quality_tools.formatter if quality_tools.formatter in template_supported_choices.quality_tools.formatter else "" %}
 {% set effective_linter_tool = quality_tools.linter if quality_tools.linter in template_supported_choices.quality_tools.linter else "" %}
 {% set effective_type_checker = quality_tools.type_checker if quality_tools.type_checker in template_supported_choices.quality_tools.type_checker else "" %}

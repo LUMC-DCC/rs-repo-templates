@@ -70,6 +70,7 @@ maintainers = [
 {% set include_mypy_tooling = effective_type_checker == "mypy" %}
 {% set has_quality_checks = include_ruff_tooling or include_mypy_tooling %}
 {% set include_quality_extra = has_quality_checks %}
+{% set include_security_extra = "Vulnerability scanning (e.g., Snyk, Dependabot)" in security_measures.selected.entries %}
 {% set release_channels = namespace(values=[]) %}
 {% for channel in distribution_channels.entries %}
 {% set _ = release_channels.values.append(channel | lower) %}
@@ -161,6 +162,11 @@ test = {{ test_dependencies | tojson }}
 {% set _ = quality_dependencies.append("mypy") %}
 {% endif %}
 quality = {{ quality_dependencies | tojson }}
+{% endif %}
+{% if include_security_extra %}
+security = [
+  "pip-audit",
+]
 {% endif %}
 {% if include_release_tooling %}
 release = [
@@ -296,31 +302,6 @@ module = [
 ]
 ignore_missing_imports = true
 {% endif %}
-{% set project_manager_extras = [] %}
-{% if licensing.compatibility_check == "Yes - automated tooling" and licensing.license | trim %}
-{% set _ = project_manager_extras.append("license") %}
-{% endif %}
-{% if include_api_adapter %}
-{% set _ = project_manager_extras.append("api") %}
-{% endif %}
-{% if include_web_adapter %}
-{% set _ = project_manager_extras.append("web") %}
-{% endif %}
-{% if include_soap_adapter %}
-{% set _ = project_manager_extras.append("soap") %}
-{% endif %}
-{% if test_types.entries %}
-{% set _ = project_manager_extras.append("test") %}
-{% endif %}
-{% if include_quality_extra %}
-{% set _ = project_manager_extras.append("quality") %}
-{% endif %}
-{% if include_release_tooling %}
-{% set _ = project_manager_extras.append("release") %}
-{% endif %}
-{% if documentation_types.entries and effective_documentation_builder in ["mkdocs", "zensical", "sphinx"] %}
-{% set _ = project_manager_extras.append("docs") %}
-{% endif %}
 {% if effective_project_manager == "pdm" %}
 
 [tool.pdm]
@@ -328,9 +309,7 @@ distribution = true
 {% elif effective_project_manager == "hatch" %}
 
 [tool.hatch.envs.default]
-features = [
-{% for extra in project_manager_extras %}  {{ toml_string(extra) }}{% if not loop.last %},{% endif %}
-{% endfor %}]
+features = ["@@PROJECT_EXTRAS_TOML@@"]
 locked = true
 {% elif effective_project_manager == "pixi" %}
 
@@ -339,5 +318,5 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-64", "osx-arm64", "win-64"]
 
 [tool.pixi.pypi-dependencies]
-{{ toml_string(project_slug | replace('_', '-')) }} = { path = ".", editable = true, extras = [{% for extra in project_manager_extras %}{{ toml_string(extra) }}{% if not loop.last %}, {% endif %}{% endfor %}] }
+{{ toml_string(project_slug | replace('_', '-')) }} = { path = ".", editable = true, extras = ["@@PROJECT_EXTRAS_TOML@@"] }
 {% endif %}

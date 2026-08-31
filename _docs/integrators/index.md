@@ -64,7 +64,8 @@ after Copier returns successfully. Keep `.copier-answers.yml` in the archive:
 it records the canonical template source, release, selected language scaffold,
 and RSM answers needed for later updates.
 
-`template_type` accepts `python` or `r` and is not part of RSM.
+`template_type` is not part of RSM. Its controlled choices are discovered from
+the available scaffold directories and exposed by Copier's questionnaire.
 `programming_languages` describes the generated software and may contain
 multiple languages; it does not select a template. Treat `template_type` as
 immutable after generation. Moving a repository to another language scaffold

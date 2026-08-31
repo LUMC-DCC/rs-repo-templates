@@ -5,12 +5,19 @@ Implementation details live in named modules and subpackages such as
 ``services``.
 """
 
+from importlib.metadata import PackageNotFoundError, version
+
 from {{ project_slug }}.services.processing import (
     ProcessingResult,
     process_text,
 )
 
-__version__ = "{{ (versioning.version or "0.1.0") }}"
+try:
+    # Package metadata is the version source of truth after installation.
+    __version__ = version("{{ project_slug | replace('_', '-') }}")
+except PackageNotFoundError:
+    # Source-tree imports can occur before the project is installed.
+    __version__ = "0+unknown"
 
 # Keep the public import surface explicit so downstream users can see which
 # names are intended to be stable.

@@ -86,7 +86,7 @@
         "rs-metadata validation",
         "CHANGELOG.md comparison link"
       ],
-      "notes": "Groups the initial version, versioning scheme, optional scheme details, and controlled release frequency. Omitted versions use the template's valid technical baseline.",
+      "notes": "Groups the initial version, versioning scheme, optional scheme details, and controlled release frequency. Python package metadata is the runtime version source of truth; the importable version is read from installed metadata. Omitted versions use the template's valid technical baseline.",
       "statuses": {
         "python": "implemented",
         "r": "partial"
@@ -658,9 +658,13 @@
         "SECURITY.md security measures",
         "SECURITY.md additional security measures",
         "Python typed runtime configuration selection",
+        "Python security dependency group",
+        "Python installed dependency audit",
+        "GitHub dependency review",
+        "GitHub CodeQL analysis",
         "Python security CI workflow"
       ],
-      "notes": "One object combines controlled public security measures with an optional public free-text complement. Selecting secrets or secure configuration management adds a typed Python settings boundary; selecting vulnerability scanning adds dependency review and CodeQL automation.",
+      "notes": "One object combines controlled public security measures with an optional public free-text complement. Selecting secrets or secure configuration management adds a typed Python settings boundary; selecting vulnerability scanning adds installed dependency auditing, dependency review, and CodeQL automation.",
       "statuses": {
         "python": "implemented",
         "r": "partial"
