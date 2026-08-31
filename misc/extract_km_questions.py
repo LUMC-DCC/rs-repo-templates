@@ -383,7 +383,7 @@ def build_reference(km: dict[str, Any], source_path: Path) -> dict[str, Any]:
     questions = flatten_questions(chapters)
 
     return {
-        "source": str(source_path),
+        "source": source_path.name,
         "id": km.get("id"),
         "km_id": km.get("kmId"),
         "name": km.get("name"),

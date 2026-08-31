@@ -15,8 +15,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Source Code" = "https://github.com/LUMC-DCC/cookiecutter-templates"
-Documentation = "https://lumc-dcc.github.io/cookiecutter-templates"
+"Source Code" = "https://github.com/LUMC-DCC/rs-repo-templates"
+Documentation = "https://lumc-dcc.github.io/rs-repo-templates"
 
 
 [build-system]

@@ -1,6 +1,6 @@
 # LUMC research software templates
 
-[![CI](https://github.com/LUMC-DCC/cookiecutter-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/LUMC-DCC/cookiecutter-templates/actions/workflows/ci.yml) [![Documentation](https://img.shields.io/badge/docs-online-blue?labelColor=gray)](https://lumc-dcc.github.io/cookiecutter-templates/)
+[![CI](https://github.com/LUMC-DCC/rs-repo-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/LUMC-DCC/rs-repo-templates/actions/workflows/ci.yml) [![Documentation](https://img.shields.io/badge/docs-online-blue?labelColor=gray)](https://lumc-dcc.github.io/rs-repo-templates/)
 
 Service-agnostic Copier templates for maintainable, FAIR research software
 repositories. Python is the reference implementation; the shared contract and
@@ -27,10 +27,10 @@ Copier's Git-aware three-way merge.
 
 ## Documentation
 
-- [Use a generated project](https://lumc-dcc.github.io/cookiecutter-templates/users/)
-- [Integrate a generation service](https://lumc-dcc.github.io/cookiecutter-templates/integrators/)
-- [Develop the templates](https://lumc-dcc.github.io/cookiecutter-templates/developers/)
-- [Understand the architecture](https://lumc-dcc.github.io/cookiecutter-templates/architecture/)
+- [Use a generated project](https://lumc-dcc.github.io/rs-repo-templates/users/)
+- [Integrate a generation service](https://lumc-dcc.github.io/rs-repo-templates/integrators/)
+- [Develop the templates](https://lumc-dcc.github.io/rs-repo-templates/developers/)
+- [Understand the architecture](https://lumc-dcc.github.io/rs-repo-templates/architecture/)
 
 ## Development
 

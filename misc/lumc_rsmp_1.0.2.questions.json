@@ -1,5 +1,5 @@
 {
-  "source": "/Users/thatmariia/LUMC_code/cookiecutter-templates/misc/lumc_rsmp_1.0.2.km",
+  "source": "lumc_rsmp_1.0.2.km",
   "id": "lumc:rsmp:1.0.2",
   "km_id": "rsmp",
   "name": "LUMC-DCC Software Management Plan",

@@ -48,7 +48,7 @@ def generate_project(payload: dict, destination: Path, template_ref: str) -> Pat
         {name: value for name, value in payload.items() if name != "template_type"}
     )
     run_copy(
-        "https://github.com/LUMC-DCC/cookiecutter-templates.git",
+        "https://github.com/LUMC-DCC/rs-repo-templates.git",
         destination,
         data={"template_type": template_type, **metadata.model_dump(exclude_none=True)},
         vcs_ref=template_ref,
