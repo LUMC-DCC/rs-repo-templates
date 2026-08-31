@@ -28,7 +28,7 @@ Generated from the [published RSM schema](https://lumc-dcc.github.io/rsm-schema/
 | `contacts` | object | no | `{}` | Public contact routes for general community, code-of-conduct, and private security reports. |
 | `governance_notes` | string | no | Not defined | Public governance and decision-making notes. |
 | `programming_languages` | collection object | no | `{"entries":[]}` | Programming languages used by the project. Entries include a name and may include version_constraint and role from the SMP. |
-| `software_functions` | collection object | no | `{"entries":[]}` | Functions or operations performed by the software. Entries may include summary, operation, input, output, cmd, and note. |
+| `software_functions` | collection object | no | `{"entries":[]}` | Functions or operations performed by the software. Entries may include operations, topics, inputs, outputs, cmd, and note. |
 | `interfaces` | collection object | no | `{"entries":[]}` | Interfaces exposed by the software. Type names the interface; specification and status describe it. |
 | `operating_systems` | collection object | no | `{"entries":[]}` | Supported operating systems or platforms. Entries may include name, specification, and status from the SMP. |
 | `external_dependencies` | collection object | no | `{"entries":[]}` | External software dependencies or standards. Entries may include name, version_constraint, url, license, and purpose. |

@@ -10,8 +10,8 @@ readme = "README.md"
 requires-python = ">=3.14,<4.0"
 dependencies = [
     "packaging>=24,<27",
-    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@5727be9bb76deaf43dff4bbc168bda4b217c63ab",
-    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@2486fd3a4d4c2bc67f5809cea6fdc02218561897",
+    "rsm-schema @ git+https://github.com/lumc-dcc/rsm-schema.git@main",
+    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@main",
 ]
 
 [project.urls]
@@ -43,7 +43,7 @@ zensical = "^0.0.57"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.2.0"
 pytest = "^9.1.1"
-rs-metadata = {git = "https://github.com/LUMC-DCC/rs-metadata.git", rev = "27f3da06c4bae5f735c492608b5ffea6c2715c21"}
+rs-metadata = {git = "https://github.com/LUMC-DCC/rs-metadata.git", branch = "main"}
 ruff = "^0.16.4"
 pydantic-settings = ">=2,<3"
 copier = "^9.17.2"

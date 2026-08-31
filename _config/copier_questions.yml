@@ -181,8 +181,8 @@ software_functions:
   type: yaml
   default:
     entries: []
-  help: Functions or operations performed by the software. Entries may include summary, operation, input,
-    output, cmd, and note.
+  help: Functions or operations performed by the software. Entries may include operations, topics, inputs,
+    outputs, cmd, and note.
   multiline: true
 interfaces:
   type: yaml
