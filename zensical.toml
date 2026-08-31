@@ -1,10 +1,10 @@
 [project]
 site_name = "Research Software Templates"
 site_description = "Service-agnostic Copier templates for FAIR research software"
-site_url = "https://lumc-dcc.github.io/cookiecutter-templates"
+site_url = "https://lumc-dcc.github.io/rs-repo-templates"
 docs_dir = "_docs"
-repo_url = "https://github.com/LUMC-DCC/cookiecutter-templates"
-repo_name = "LUMC-DCC/cookiecutter-templates"
+repo_url = "https://github.com/LUMC-DCC/rs-repo-templates"
+repo_name = "LUMC-DCC/rs-repo-templates"
 edit_uri = "edit/main/_docs/"
 copyright = "Copyright LUMC Digital Competence Center contributors."
 nav = [
