@@ -25,14 +25,14 @@ def _render_value(value: Any) -> Any:
 
 
 def load_context(project_root: Path, template_type: str) -> dict[str, Any]:
-    """Load public RSM answers and language-specific rendering policy.
+    """Load public RSM answers and template-specific rendering policy.
 
     Parameters
     ----------
     project_root
         Generated repository root containing ``.copier-answers.yml``.
     template_type
-        Expected language scaffold name.
+        Expected repository scaffold name.
 
     Returns
     -------

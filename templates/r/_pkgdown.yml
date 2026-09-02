@@ -1,0 +1,13 @@
+title: "{{ (project_name or project_slug) }}"
+destination: site
+{% if urls.documentation %}url: "{{ urls.documentation }}"
+{% endif %}template:
+  bootstrap: 5
+
+development:
+  mode: auto
+
+reference:
+  - title: Package functions
+    contents:
+      - process_text

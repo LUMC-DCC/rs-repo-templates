@@ -1,6 +1,7 @@
 """Compose generated public project-context sections."""
 
 from renderers.project_context.basic import (
+    build_access_section,
     build_audience_section,
     build_funding_section,
     build_problem_statement_section,
@@ -51,6 +52,10 @@ def build_project_context_sections(
         ),
         build_audience_section(entries(ctx, "audiences")),
         build_related_software_section(entries(ctx, "related_software")),
+        build_access_section(
+            object_value(ctx, "access", "type"),
+            object_value(ctx, "access", "details"),
+        ),
     ]
     if include_motivation_details:
         sections[2:2] = [

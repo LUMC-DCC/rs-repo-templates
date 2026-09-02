@@ -1,8 +1,9 @@
 # Research software templates
 
 This repository maintains service-agnostic Copier templates for research
-software. They combine a published metadata contract with language-aware source
-layouts, tests, documentation, CI, community files, and FAIR metadata.
+software. They combine a published metadata contract with a language-neutral
+repository backbone and optional language-aware source layouts, tests, documentation, CI,
+community files, and FAIR metadata.
 
 ## Documentation layers
 

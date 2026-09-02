@@ -1,0 +1,30 @@
+Bootstrap: docker
+From: rocker/r-ver:@@R_CONTAINER_VERSION@@
+
+%labels
+    org.opencontainers.image.title {{ (project_name or project_slug) }}
+    org.opencontainers.image.version {{ (versioning.version or "0.1.0") }}
+    org.opencontainers.image.description {{ project_short_description }}
+{% if urls.repository %}    org.opencontainers.image.source {{ urls.repository }}
+{% endif %}{% if urls.homepage %}    org.opencontainers.image.url {{ urls.homepage }}
+{% endif %}{% if urls.documentation %}    org.opencontainers.image.documentation {{ urls.documentation }}
+{% endif %}
+
+%files
+    DESCRIPTION /opt/project/DESCRIPTION
+    NAMESPACE /opt/project/NAMESPACE
+    README.md /opt/project/README.md
+    R /opt/project/R
+    man /opt/project/man
+{% if licensing.license %}    LICENSE /opt/project/LICENSE
+{% endif %}
+
+%post
+    R CMD INSTALL /opt/project
+    rm -rf /opt/project
+
+%runscript
+    exec Rscript -e "cat({{ project_slug }}::process_text('ready'), '\\n')" "$@"
+
+%test
+    Rscript -e "stopifnot({{ project_slug }}::process_text('ok') == 'OK')"

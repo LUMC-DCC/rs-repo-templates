@@ -93,6 +93,9 @@ BASE_CONTEXT = {
         "entries": [
             {
                 "funder": "LUMC",
+                "funder_identifier": "05xvt9f17",
+                "funder_identifier_type": "ror",
+                "funder_url": "https://www.lumc.nl/",
                 "award_number": "LUMC-2024-001",
                 "award_title": "Research Software Sustainability",
                 "grant_url": "https://example.org/grants/lumc-2024-001",
@@ -195,6 +198,7 @@ BASE_CONTEXT = {
             "CHANGELOG.md",
         ]
     },
+    "code_review_policy": "At least **two reviewers** must approve each change.",
     "support_routes": {
         "entries": [
             {
@@ -419,6 +423,10 @@ BASE_CONTEXT = {
         "license": "MIT",
         "compatibility_check": "Yes - automated tooling",
     },
+    "access": {
+        "type": "free-with-restrictions",
+        "details": "https://example.org/research-template-demo/access",
+    },
 }
 
 
@@ -552,10 +560,13 @@ def test_python_default_context_generates_sparse_working_project(
         unsafe=True,
     )
 
-    pyproject = tomllib.loads((project_path / "pyproject.toml").read_text())
+    pyproject_text = (project_path / "pyproject.toml").read_text(encoding="utf-8")
+    pyproject = tomllib.loads(pyproject_text)
     assert project_path.name == "my_awesome_project"
     assert pyproject["project"]["version"] == "0.1.0"
     assert pyproject["project"]["requires-python"] == ">=3.12"
+    assert "rsm-schema" not in pyproject_text
+    assert "rs-files-templates" not in pyproject_text
     for rel_path in (
         "CITATION.cff",
         "codemeta.json",
@@ -567,7 +578,17 @@ def test_python_default_context_generates_sparse_working_project(
     ):
         assert not (project_path / rel_path).exists(), rel_path
     pre_commit = (project_path / ".pre-commit-config.yaml").read_text(encoding="utf-8")
-    assert "check-merge-conflict" in pre_commit
+    for hook_id in (
+        "check-added-large-files",
+        "check-case-conflict",
+        "check-json",
+        "check-merge-conflict",
+        "check-toml",
+        "check-yaml",
+        "end-of-file-fixer",
+        "trailing-whitespace",
+    ):
+        assert hook_id in pre_commit
 
 
 def assert_no_template_artifacts(project_path):
@@ -985,6 +1006,7 @@ def test_python_template_generates_expected_option_sets(
         assert metadata["project"]["license-files"] == ["LICENSE"]
         assert optional_dependencies["api"] == ["fastapi", "uvicorn[standard]"]
         assert optional_dependencies["quality"] == ["pre-commit", "ruff"]
+        assert optional_dependencies["security"] == ["pip-audit"]
         assert optional_dependencies["release"] == ["build", "packaging", "twine"]
         assert metadata["tool"]["ruff"]["line-length"] == 88
         assert "target-version" not in metadata["tool"]["ruff"]
@@ -1016,7 +1038,14 @@ def test_python_template_generates_expected_option_sets(
             for hook in repository["hooks"]
         ]
         assert hook_ids == [
+            "check-added-large-files",
+            "check-case-conflict",
+            "check-json",
             "check-merge-conflict",
+            "check-toml",
+            "check-yaml",
+            "end-of-file-fixer",
+            "trailing-whitespace",
             "ruff-check",
             "ruff-format",
         ]
@@ -1100,6 +1129,15 @@ def test_python_readme_badges_follow_available_project_metadata(
     project_path = render_python_project(tmp_path, monkeypatch)
     readme = (project_path / "README.md").read_text(encoding="utf-8")
 
+    for heading in (
+        "## Purpose",
+        "## Intended Audience",
+        "## Installation",
+        "## Usage",
+        "## Citation",
+        "## Support",
+    ):
+        assert heading in readme
     assert (
         "https://github.com/LUMC-DCC/research-template-demo/actions/workflows/tests.yml/badge.svg"
     ) in readme
@@ -1170,7 +1208,8 @@ def test_python_zenodo_channel_generates_release_metadata(
         ("pixi", "prefix-dev/setup-pixi@", "pixi run ", "pixi"),
         (
             "pip",
-            'python -m pip install -e ".[license,api,test,quality,release,docs]"',
+            "python -m pip install -e "
+            '".[license,api,test,quality,security,release,docs]"',
             "",
             None,
         ),
@@ -1233,6 +1272,17 @@ def test_python_project_manager_controls_setup_and_commands(
     assert "## Development setup" in contributing
     if tool_config:
         assert tool_config in pyproject["tool"]
+    dependency_groups = list(pyproject["project"]["optional-dependencies"])
+    if project_manager == "hatch":
+        assert pyproject["tool"]["hatch"]["envs"]["default"]["features"] == (
+            dependency_groups
+        )
+    if project_manager == "pixi":
+        distribution_name = project_path.name.replace("_", "-")
+        assert (
+            pyproject["tool"]["pixi"]["pypi-dependencies"][distribution_name]["extras"]
+            == dependency_groups
+        )
 
     for lockfile in (
         "uv.lock",
@@ -1244,6 +1294,29 @@ def test_python_project_manager_controls_setup_and_commands(
         assert not (project_path / lockfile).exists()
 
 
+def test_python_pip_setup_uses_all_selected_dependency_groups(
+    tmp_path,
+    monkeypatch,
+):
+    """Ensure uncommon interface and docs combinations remain installable."""
+    project_path = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_slug="pip_soap_zensical_demo",
+        project_manager="pip",
+        interfaces={"entries": [{"type": "Web service"}]},
+        documentation_builder="zensical",
+    )
+
+    action = (
+        project_path / ".github" / "actions" / "setup-python-project" / "action.yml"
+    ).read_text(encoding="utf-8")
+    assert (
+        'python -m pip install -e ".[license,soap,test,quality,security,release,docs]"'
+        in action
+    )
+
+
 def test_python_containerization_generates_composable_recipes_and_ci(
     tmp_path,
     monkeypatch,
@@ -1253,6 +1326,15 @@ def test_python_containerization_generates_composable_recipes_and_ci(
         tmp_path,
         monkeypatch,
         project_slug="container_demo",
+        programming_languages={
+            "entries": [
+                {
+                    "name": "Python",
+                    "version_constraint": ">=3.14",
+                    "role": "primary package",
+                }
+            ]
+        },
         containerization={
             "entries": [
                 {"type": "Docker"},
@@ -1277,13 +1359,15 @@ def test_python_containerization_generates_composable_recipes_and_ci(
 
     assert yaml.safe_load(workflow)["name"] == "Containers"
     assert dockerfile == containerfile
-    assert "FROM python:3.12-slim AS builder" in dockerfile
+    assert "FROM python:3.14-slim AS builder" in dockerfile
+    assert "FROM python:3.14-slim AS runtime" in dockerfile
     assert "USER appuser" in dockerfile
     assert "CONTAINER_DEMO_SERVER_HOST=0.0.0.0" in dockerfile
     assert 'CMD ["container-demo-serve"]' in dockerfile
     assert "SERVER_PORT=8000WORKDIR" not in dockerfile
     assert "\n \\\n" not in dockerfile
     assert "Bootstrap: docker" in apptainer
+    assert "From: python:3.14-slim" in apptainer
     assert "%test" in apptainer
     assert "CONTAINER_DEMO_SERVER_HOST=0.0.0.0" in apptainer
     assert "exec container-demo-serve" in apptainer
@@ -3041,7 +3125,15 @@ def test_python_vulnerability_scanning_controls_security_workflow(
     workflow = yaml.safe_load(workflow_path.read_text(encoding="utf-8"))
     developer_docs = (selected_path / "docs/developer.md").read_text(encoding="utf-8")
 
-    assert set(workflow["jobs"]) == {"dependency-review", "codeql"}
+    assert set(workflow["jobs"]) == {
+        "dependency-audit",
+        "dependency-review",
+        "codeql",
+    }
+    assert workflow["jobs"]["dependency-audit"]["timeout-minutes"] == 15
+    assert workflow["jobs"]["dependency-audit"]["steps"][-1]["run"] == (
+        "uv run pip-audit"
+    )
     assert workflow["jobs"]["dependency-review"]["timeout-minutes"] == 10
     assert workflow["jobs"]["codeql"]["timeout-minutes"] == 30
     assert "`security.yml`" in developer_docs
@@ -3093,7 +3185,7 @@ def test_generated_python_package_imports(tmp_path, monkeypatch):
                 "from importable_demo import __version__; "
                 "from importable_demo import process_text; "
                 "from importable_demo.main import main; "
-                "assert __version__ == '0.2.0'; "
+                "assert __version__ == '0+unknown'; "
                 "assert callable(main); "
                 "assert process_text('abc').output_text == 'ABC'"
             ),
@@ -3181,16 +3273,19 @@ def test_funding_renders_in_python_public_metadata_and_docs(tmp_path, monkeypatc
 
     assert "## Funding" in docs_overview
     assert (
-        "- LUMC: Research Software Sustainability "
+        "- [LUMC](https://www.lumc.nl/): Research Software Sustainability "
         "(award LUMC-2024-001) "
+        "(ror: `05xvt9f17`) "
         "([grant](https://example.org/grants/lumc-2024-001))"
     ) in docs_overview
     assert "- Health-RI (project HRI-RS-2)" in docs_overview
     assert "- LUMC (project RS-002)" in docs_overview
     assert codemeta["funder"] == [
         {
+            "@id": "https://ror.org/05xvt9f17",
             "@type": "Organization",
             "name": "LUMC",
+            "url": "https://www.lumc.nl/",
         },
         {
             "@type": "Organization",
@@ -3219,7 +3314,19 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
         encoding="utf-8"
     )
     docs_legal = (project_path / "docs" / "legal.md").read_text(encoding="utf-8")
+    contributing = (project_path / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    pull_request = (project_path / ".github" / "pull_request_template.md").read_text(
+        encoding="utf-8"
+    )
     codemeta = json.loads((project_path / "codemeta.json").read_text())
+
+    assert "## Access" in readme
+    assert "Free with restrictions" in docs_overview
+    assert "## Code review" in contributing
+    assert BASE_CONTEXT["code_review_policy"] in contributing
+    assert "code-review policy in `CONTRIBUTING.md`" in pull_request
+    assert codemeta["isAccessibleForFree"] is True
+    assert codemeta["schema:usageInfo"] == BASE_CONTEXT["access"]["details"]
 
     expected_related = [
         (
@@ -3404,6 +3511,8 @@ def test_python_template_generates_codemeta_metadata(tmp_path, monkeypatch):
         "Windows",
     ]
     assert codemeta["license"] == "https://spdx.org/licenses/MIT"
+    assert codemeta["isAccessibleForFree"] is True
+    assert codemeta["schema:usageInfo"] == BASE_CONTEXT["access"]["details"]
     assert codemeta["codeRepository"] == (
         "https://github.com/LUMC-DCC/research-template-demo"
     )
@@ -3423,8 +3532,10 @@ def test_python_template_generates_codemeta_metadata(tmp_path, monkeypatch):
     assert "provider" not in codemeta
     assert codemeta["funder"] == [
         {
+            "@id": "https://ror.org/05xvt9f17",
             "@type": "Organization",
             "name": "LUMC",
+            "url": "https://www.lumc.nl/",
         },
         {
             "@type": "Organization",

@@ -35,6 +35,15 @@ Generated user, developer, and deployment docs are rendered from the selected
 interface types. A project with only a CLI does not receive portal usage notes;
 a project with a SPARQL endpoint receives RDF/SPARQL architecture notes.
 
+## R effects
+
+The R scaffold always provides an installable library boundary and exported
+starter function. Interface selections are preserved in README, CodeMeta, and
+the selected overview, usage, developer, deployment, and reference pages. More
+specialized R adapters such as Shiny or plumber applications remain explicit
+project architecture choices rather than being inferred from a public interface
+label.
+
 ## Research guardrails
 
 The Python backbone follows these public conventions and ecosystem references:

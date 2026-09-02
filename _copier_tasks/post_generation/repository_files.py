@@ -11,16 +11,25 @@ from rs_files_templates import (
     CodeMetaModel,
     CodeOfConductModel,
     ContributingModel,
+    DocumentationDeploymentModel,
+    DocumentationDeveloperModel,
+    DocumentationLegalModel,
+    DocumentationOverviewModel,
+    DocumentationReferenceModel,
+    DocumentationUserModel,
     GovernanceModel,
     IssueTemplateModel,
     LicenseModel,
     PullRequestTemplateModel,
+    ReadmeModel,
     SecurityModel,
     SupportModel,
     ZenodoModel,
     render_many,
+    validate_contract_compatibility,
 )
 from rs_files_templates.external import spdx
+from rsm_schema import schema as rsm_schema
 from utils.context import entries, object_value
 from utils.rsm import rsm_payload
 
@@ -42,10 +51,17 @@ REPOSITORY_FILE_MODELS = (
     IssueTemplateModel,
     LicenseModel,
     PullRequestTemplateModel,
+    ReadmeModel,
     SecurityModel,
     SupportModel,
     ZenodoModel,
     ContributingModel,
+    DocumentationOverviewModel,
+    DocumentationUserModel,
+    DocumentationDeploymentModel,
+    DocumentationDeveloperModel,
+    DocumentationReferenceModel,
+    DocumentationLegalModel,
 )
 
 
@@ -166,6 +182,18 @@ def selected_models(ctx, spdx_identifier=None):
     return models
 
 
+def validate_models(models):
+    """Validate reusable model data against the pinned RSM contract.
+
+    Parameters
+    ----------
+    models : collections.abc.Iterable
+        Populated reusable file models selected for generation.
+    """
+    for model in models:
+        validate_contract_compatibility(model, schema=rsm_schema.raw)
+
+
 def render_issue_templates(ctx, cwd):
     """Render package-owned GitHub issue forms when support is selected.
 
@@ -180,6 +208,7 @@ def render_issue_templates(ctx, cwd):
         return
 
     model = model_from_context(IssueTemplateModel, ctx)
+    validate_models([model])
     target_root = cwd / ".github" / "ISSUE_TEMPLATE"
     target_root.mkdir(parents=True, exist_ok=True)
     for file_name, content in model.archive_entries().items():
@@ -215,6 +244,7 @@ def render_repository_files(ctx, cwd):
 
     models = selected_models(ctx, spdx_identifier)
     if models:
+        validate_models(models)
         render_many(models, cwd)
     render_issue_templates(ctx, cwd)
     return spdx_identifier

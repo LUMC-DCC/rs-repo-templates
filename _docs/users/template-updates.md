@@ -36,6 +36,11 @@ same lines, normal conflict markers may remain.
 The generated pre-commit configuration checks for unresolved conflict markers.
 It does not decide which side of a conflict is correct.
 
+The standard part of `README.md` is refreshed deterministically during
+finalization. Keep project-owned README additions below
+`<!-- rs-files-templates:README:end -->`; that trailing content is retained when
+answers or resolved capabilities change.
+
 Change template answers through `copier update --trust`, interactively or with
 the calling service's structured data. Do not use `copier recopy` for routine
 updates: it renders directly over the project without the same three-way update

@@ -105,6 +105,11 @@ def test_python_project_updates_preserve_edits_and_apply_new_answers(tmp_path):
     initialize_repository(project, "chore: generate project")
 
     readme = project / "README.md"
+    readme.write_text(
+        readme.read_text(encoding="utf-8")
+        + "\n## Project notes\n\nProject-owned README content.\n",
+        encoding="utf-8",
+    )
     research_notes = project / "RESEARCH_NOTES.md"
     research_notes.write_text(
         "# Research notes\n\nProject-owned content.\n",
@@ -118,15 +123,6 @@ def test_python_project_updates_preserve_edits_and_apply_new_answers(tmp_path):
     run_git(project, "add", ".")
     run_git(project, "commit", "-m", "feat: extend generated project")
 
-    template_readme = template / "templates" / "python" / "README.md"
-    template_readme.write_text(
-        template_readme.read_text(encoding="utf-8").replace(
-            "# {{ (project_name or project_slug) }}",
-            "# {{ (project_name or project_slug) }}\n\nTemplate release marker.",
-            1,
-        ),
-        encoding="utf-8",
-    )
     gitignore = template / "templates" / "python" / ".gitignore"
     gitignore.write_text(
         gitignore.read_text(encoding="utf-8") + "\n# Local test output\n*.local-test\n",
@@ -150,7 +146,8 @@ def test_python_project_updates_preserve_edits_and_apply_new_answers(tmp_path):
     )
 
     updated_readme = readme.read_text(encoding="utf-8")
-    assert "Template release marker." in updated_readme
+    assert "Project-owned README content." in updated_readme
+    assert "python -m pytest" in updated_readme
     assert "Project-owned content." in research_notes.read_text(encoding="utf-8")
     assert "Project-owned extension." in service.read_text(encoding="utf-8")
     assert "*.local-test" in gitignore.read_text(encoding="utf-8")
@@ -167,7 +164,7 @@ def test_python_project_updates_preserve_edits_and_apply_new_answers(tmp_path):
 
 
 def test_r_template_generates_through_the_shared_copier_entrypoint(tmp_path):
-    """Ensure the early R scaffold uses the same answers and task lifecycle."""
+    """Ensure the R package scaffold uses the shared answers and task lifecycle."""
     template = copy_template_source(tmp_path / "template")
     project = tmp_path / "r-project"
 
@@ -186,8 +183,14 @@ def test_r_template_generates_through_the_shared_copier_entrypoint(tmp_path):
     )
     assert answers["template_type"] == "r"
     assert answers["project_slug"] == "my.awesome.project"
-    assert (project / "README.md").read_text(encoding="utf-8") == (
-        "# my.awesome.project\n"
+    assert (
+        (project / "README.md")
+        .read_text(encoding="utf-8")
+        .startswith("# my.awesome.project\n")
     )
+    assert (project / "DESCRIPTION").exists()
+    assert (project / "R" / "process.R").exists()
+    assert (project / "man" / "process_text.Rd").exists()
     assert (project / ".pre-commit-config.yaml").exists()
-    assert not (project / ".github" / "workflows").exists()
+    assert (project / ".github" / "workflows" / "repository.yml").exists()
+    assert not (project / ".github" / "workflows" / "tests.yml").exists()

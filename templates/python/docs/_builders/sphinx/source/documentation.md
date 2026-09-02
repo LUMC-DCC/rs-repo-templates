@@ -3,13 +3,13 @@
 Install the documentation dependencies:
 
 ```bash
-@@PROJECT_SETUP_DOCS@@
+@@DOCS_SETUP@@
 ```
 
 Build the HTML documentation:
 
 ```bash
-@@PROJECT_RUN@@sphinx-build -M html docs/source docs/build
+@@DOCS_BUILD@@
 ```
 
 The generated `docs/Makefile` and `docs/make.bat` expose the same Sphinx targets
@@ -27,4 +27,4 @@ On Windows:
 docs\make.bat html
 ```
 
-The HTML entry point is `docs/build/html/index.html`.
+The HTML entry point is `@@DOCS_OUTPUT@@`.

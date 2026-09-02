@@ -4,7 +4,7 @@ from post_generation.documentation import (
     has_documentation,
     resolve_documentation_builder,
 )
-from post_generation.quality import has_quality_checks
+from post_generation.quality import has_quality_checks, resolve_quality_tool
 from renderers.community_files import selected_community_files
 from utils.configuration import has_runtime_configuration
 from utils.containerization import has_container_recipe, has_container_type
@@ -26,7 +26,8 @@ from utils.interfaces import (
     has_workflow_interface,
 )
 from utils.paths import remove_path
-from utils.release import has_python_distribution
+from utils.project_management import resolve_project_manager
+from utils.release import has_python_distribution, has_r_distribution
 from utils.security import has_vulnerability_scanning
 
 
@@ -99,6 +100,7 @@ def needs_python_project_setup(ctx):
             has_quality_checks(ctx),
             builds_documentation,
             checks_licenses,
+            has_vulnerability_scanning(ctx),
             has_python_distribution(entries(ctx, "distribution_channels")),
         )
     )
@@ -132,6 +134,13 @@ OPTIONAL_PATHS = [
     {
         "path": "zensical.toml",
         "should_remove": lambda ctx: not has_documentation(ctx),
+    },
+    {
+        "path": "_pkgdown.yml",
+        "should_remove": lambda ctx: (
+            not has_documentation(ctx)
+            or resolve_documentation_builder(ctx)[1] != "pkgdown"
+        ),
     },
     {
         "path": ".github/workflows/docs.yml",
@@ -180,6 +189,40 @@ OPTIONAL_PATHS = [
         ),
     },
     {
+        "path": "tests/testthat/test-smoke.R",
+        "should_remove": lambda ctx: lacks_test_type(ctx, "Smoke tests"),
+    },
+    {
+        "path": "tests/testthat/test-doctest.R",
+        "should_remove": lambda ctx: lacks_test_type(ctx, "Doctests"),
+    },
+    {
+        "path": "tests/testthat/test-unit.R",
+        "should_remove": lambda ctx: lacks_test_type(ctx, "Unit tests"),
+    },
+    {
+        "path": "tests/testthat/test-integration.R",
+        "should_remove": lambda ctx: lacks_test_type(ctx, "Integration tests"),
+    },
+    {
+        "path": "tests/testthat/test-system.R",
+        "should_remove": lambda ctx: lacks_test_type(
+            ctx,
+            "System / end-to-end tests",
+        ),
+    },
+    {
+        "path": "tests/testthat/test-regression.R",
+        "should_remove": lambda ctx: lacks_test_type(ctx, "Regression tests"),
+    },
+    {
+        "path": "tests/testthat/test-property.R",
+        "should_remove": lambda ctx: lacks_test_type(
+            ctx,
+            "Property-based / fuzz",
+        ),
+    },
+    {
         "path": "tools/check_changelog.py",
         "should_remove": lambda ctx: lacks_community_file(ctx, "CHANGELOG.md"),
     },
@@ -216,8 +259,29 @@ OPTIONAL_PATHS = [
     {
         "path": ".github/workflows/distribution.yml",
         "should_remove": lambda ctx: (
-            not has_python_distribution(entries(ctx, "distribution_channels"))
+            not (
+                has_python_distribution(entries(ctx, "distribution_channels"))
+                or has_r_distribution(entries(ctx, "distribution_channels"))
+            )
         ),
+    },
+    {
+        "path": "tools/check_release.R",
+        "should_remove": lambda ctx: (
+            not has_r_distribution(entries(ctx, "distribution_channels"))
+        ),
+    },
+    {
+        "path": ".Rprofile",
+        "should_remove": lambda ctx: resolve_project_manager(ctx)[1] != "renv",
+    },
+    {
+        "path": "environment.R",
+        "should_remove": lambda ctx: resolve_project_manager(ctx)[1] != "rix",
+    },
+    {
+        "path": ".lintr",
+        "should_remove": lambda ctx: resolve_quality_tool(ctx, "linter")[1] != "lintr",
     },
     {
         "path": ".github/ISSUE_TEMPLATE",

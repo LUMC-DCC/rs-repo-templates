@@ -1,6 +1,6 @@
 # For template developers
 
-This section is for maintainers of the Copier composition and language
+This section is for maintainers of the Copier composition and repository
 scaffolds.
 
 ## Decide where a change belongs
@@ -9,32 +9,40 @@ scaffolds.
 | --- | --- |
 | Public field, nested shape, default, or controlled value | `rsm-schema` |
 | Reusable file content or metadata mapping | `rs-files-templates` |
+| Independent metadata-only Markdown page | `rs-files-templates` |
+| Documentation builder, scaffold command, or generated-path guidance | this repository |
 | CodeMeta/CFF consistency rules | `rs-metadata` |
-| Language scaffold, supported capability, generated workflow, or assembly | this repository |
+| Repository scaffold, supported capability, generated workflow, or assembly | this repository |
 
 Do not add a local public field to make one template work. Add general research
-software metadata to RSM; keep implementation support and language constraints
+software metadata to RSM; keep implementation support and scaffold constraints
 in local policy.
 
 ## Question workflow
 
-`_scripts/build_copier_questions.py` reads the schema bundled with the pinned
-`rsm-schema` dependency and writes `_config/rsm_questions.yml`. `copier.yml`
-includes that derived file after declaring the generator-only `template_type`
-question.
+`_scripts/maintain_repository.py` reads the schema bundled with the locked
+`rsm-schema` dependency and writes `_config/copier_questions.yml`. It also
+discovers the generator-only `template_type` choices from the directories under
+`templates/`; `copier.yml` only contains orchestration settings and includes
+the derived questions.
 
 `_config/template_policies.json` adds three kinds of local information:
 
-- the default and validation rules for each language's `project_slug`;
-- controlled RSM choices currently implemented by each language scaffold;
+- the default and validation rules for each scaffold's `project_slug`;
+- controlled RSM choices currently implemented by each repository scaffold;
 - values exposed to Jinja and finalization as hidden computed answers.
 
 The derived questions are a Copier adapter, not another public contract. Do not
 edit them directly. Regenerate after an RSM dependency or policy change:
 
 ```bash
-poetry run python _scripts/build_copier_questions.py --write
+poetry run python _scripts/maintain_repository.py --write
 ```
+
+That command also regenerates the schema field reference and field-usage page,
+then checks the installed `rs-files-templates` model inventory and its RSM
+contract compatibility. Generated artifacts carry a notice and must not be edited
+directly.
 
 ## Finalization workflow
 
@@ -42,10 +50,12 @@ poetry run python _scripts/build_copier_questions.py --write
 `_copier_tasks/finalize.py` from the template checkout. The task:
 
 1. reads `.copier-answers.yml` and validates `RSMMetadata`;
-2. applies language-specific constraints and supported-choice fallbacks;
+2. applies template-specific constraints and supported-choice fallbacks;
 3. asks `rs-files-templates` to render selected reusable files;
-4. assembles documentation, interfaces, workflows, and local tooling;
-5. removes optional paths not selected by the answers.
+4. renders selected Markdown pages and attaches builder configuration;
+5. assembles interfaces, workflows, and local tooling;
+6. removes optional paths not selected by the answers;
+7. inserts verified badges into the metadata-rendered README.
 
 Keep `finalize.py` limited to orchestration. Put filesystem actions in
 `post_generation/`, content assembly in `renderers/`, and low-level adapters in
@@ -60,7 +70,7 @@ text, and failures must stop generation rather than silently fabricate output.
 
 ## Template ownership
 
-Prefer ordinary Copier-rendered files for language scaffolds. Copier can then
+Prefer ordinary Copier-rendered files for repository scaffolds. Copier can then
 merge template releases with project changes. Use a task when output comes from
 a typed upstream renderer, requires structured selection, or needs
 post-rendering composition.
@@ -74,23 +84,36 @@ project-owned.
 `.copier-answers.yml` is always generated and committed. It is Copier-owned and
 must not be hand-edited. Other generated files can be changed by project teams.
 
+README has an explicit ownership marker. Its standard prefix is rendered
+upstream using RSM metadata only; this repository inserts verified badges. Content
+below `<!-- rs-files-templates:README:end -->` belongs to the generated project
+and must survive finalization. Never add README-only controls to the RSM schema.
+
+Documentation is also composed after Copier rendering. Do not add shared pages
+under a scaffold's `docs/_shared/` directory: the six independent base pages
+come from `rs-files-templates`. Keep builder configuration, navigation,
+dependencies, and builder-specific entry points under `docs/_builders/`.
+Builder command profiles and scaffold-specific API or path guidance live here.
+
 ## Development workflow
 
 For an RSM field change:
 
 1. make and test the schema change in `rsm-schema`;
-2. update its pinned commit and refresh `poetry.lock`;
-3. regenerate Copier questions;
+2. refresh its `main` revision in `poetry.lock`;
+3. run the repository maintenance command;
 4. update `_contracts/field_usage.json`;
-5. implement language-specific effects and generation tests;
-6. regenerate field-usage documentation.
+5. implement scaffold-specific effects and generation tests;
+6. run the maintenance command again.
 
 For a reusable file change, implement and test it in `rs-files-templates`, then
-update the pinned dependency here. Tests in this repository should cover model
-selection and complete-project integration, not duplicate upstream prose.
+refresh the dependency lock here. The maintenance command fails if its public
+model inventory or RSM overlap no longer matches this integration. Tests in
+this repository cover model selection and complete-project integration, not
+duplicate upstream prose.
 
-Keep builder-neutral generated documentation under `docs/_shared/`. Builder
-folders contain only navigation, configuration, and entry points.
+Keep metadata-only reusable Markdown in `rs-files-templates`. Builder policy
+and repository-specific documentation additions belong here.
 
 ## Releases and updates
 
@@ -121,8 +144,7 @@ not a second maintained list.
 ```bash
 poetry lock
 poetry install --with dev,docs
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 poetry run pre-commit run --all-files
 poetry run ruff check .
 poetry run ruff format --check .

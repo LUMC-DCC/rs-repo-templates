@@ -1,0 +1,2 @@
+# Generated manually so the starter package works before running roxygen2.
+export(process_text)

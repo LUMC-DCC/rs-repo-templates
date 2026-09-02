@@ -1,4 +1,4 @@
-"""Resolve quality-tool options for the selected language template."""
+"""Resolve quality-tool options for the selected implementation template."""
 
 from utils.context import resolve_object_choice
 

@@ -1,0 +1,43 @@
+name: R package checks
+{% set ci_os_runners = [] %}
+{% for operating_system in operating_systems.entries %}
+{% set name = operating_system.name if operating_system.name is defined else "" %}
+{% set status = operating_system.status if operating_system.status is defined else "" %}
+{% set normalized = name | lower %}
+{% if name and status in ["", "Officially supported"] %}
+{% if ("linux" in normalized or "ubuntu" in normalized) and "ubuntu-latest" not in ci_os_runners %}{% set _ = ci_os_runners.append("ubuntu-latest") %}{% endif %}
+{% if ("macos" in normalized or "mac os" in normalized or "darwin" in normalized) and "macos-latest" not in ci_os_runners %}{% set _ = ci_os_runners.append("macos-latest") %}{% endif %}
+{% if "windows" in normalized and "windows-latest" not in ci_os_runners %}{% set _ = ci_os_runners.append("windows-latest") %}{% endif %}
+{% endif %}
+{% endfor %}
+{% if not ci_os_runners %}{% set _ = ci_os_runners.append("ubuntu-latest") %}{% endif %}
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ '{{' }} github.workflow {{ '}}' }}-${{ '{{' }} github.ref {{ '}}' }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: R CMD check (${{ '{{' }} matrix.os {{ '}}' }})
+    runs-on: ${{ '{{' }} matrix.os {{ '}}' }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+{% for runner in ci_os_runners %}          - {{ runner }}
+{% endfor %}    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+      - uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+      - uses: r-lib/actions/check-r-package@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2

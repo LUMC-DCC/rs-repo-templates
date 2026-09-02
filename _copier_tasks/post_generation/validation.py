@@ -2,7 +2,7 @@
 
 import re
 
-from rsm_schema import RSMMetadata
+from rsm_schema import RSMMetadata, validate_document
 from utils.rsm import rsm_payload
 
 
@@ -64,6 +64,7 @@ def validate_context(ctx):
         If any field violates its selected template constraint.
     """
     public_context = rsm_payload(ctx, RSMMetadata.model_fields)
+    validate_document(public_context)
     RSMMetadata.model_validate(public_context)
 
     schemas = ctx.get("_template_schemas", {})

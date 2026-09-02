@@ -19,6 +19,9 @@ def format_funding_label(funding):
     award_number = funding.get("award_number", "")
     project_code = funding.get("project_code", "")
     grant_url = funding.get("grant_url", "")
+    funder_identifier = funding.get("funder_identifier", "")
+    funder_identifier_type = funding.get("funder_identifier_type", "")
+    funder_url = funding.get("funder_url", "")
 
     if funder:
         label = funder
@@ -37,6 +40,15 @@ def format_funding_label(funding):
         label = f"{label} (award {award_number})"
     if project_code:
         label = f"{label} (project {project_code})"
+    if funder and funder_url:
+        label = label.replace(funder, f"[{funder}]({funder_url})", 1)
+    if funder_identifier:
+        identifier_label = funder_identifier_type or "funder identifier"
+        if str(funder_identifier).startswith(("http://", "https://")):
+            identifier = f"[{identifier_label}]({funder_identifier})"
+        else:
+            identifier = f"{identifier_label}: `{funder_identifier}`"
+        label = f"{label} ({identifier})"
     if grant_url:
         label = f"{label} ([grant]({grant_url}))"
 
@@ -215,3 +227,37 @@ def build_funding_section(funding_entries):
         f"- {format_funding_label(funding)}" for funding in funding_entries
     ]
     return "## Funding\n\n" + "\n".join(funding_lines)
+
+
+def build_access_section(access_type, details):
+    """Build the generated software-access section.
+
+    Parameters
+    ----------
+    access_type : str
+        Controlled access model.
+    details : str
+        Public explanation or URL for the access terms.
+
+    Returns
+    -------
+    str
+        Markdown section, or an empty string.
+    """
+    if not access_type and not details:
+        return ""
+
+    labels = {
+        "free": "Free",
+        "free-with-restrictions": "Free with restrictions",
+        "commercial": "Commercial",
+    }
+    paragraphs = []
+    if access_type:
+        paragraphs.append(f"**Access type:** {labels.get(access_type, access_type)}.")
+    if details:
+        if str(details).startswith(("http://", "https://")):
+            paragraphs.append(f"[Access details]({details})")
+        else:
+            paragraphs.append(str(details))
+    return "## Access\n\n" + "\n\n".join(paragraphs)

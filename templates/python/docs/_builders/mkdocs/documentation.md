@@ -3,20 +3,20 @@
 Install the documentation dependencies:
 
 ```bash
-@@PROJECT_SETUP_DOCS@@
+@@DOCS_SETUP@@
 ```
 
 Preview the documentation locally:
 
 ```bash
-@@PROJECT_RUN@@mkdocs serve
+@@DOCS_PREVIEW@@
 ```
 
 Build the static site:
 
 ```bash
-@@PROJECT_RUN@@mkdocs build
+@@DOCS_BUILD@@
 ```
 
 The local preview is available at <http://127.0.0.1:8000/> by default. The
-static site is written to the `site/` directory.
+static site is written to `@@DOCS_OUTPUT@@`.

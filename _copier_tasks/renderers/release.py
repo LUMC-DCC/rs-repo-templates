@@ -4,6 +4,7 @@ from utils.containerization import selected_container_types
 from utils.context import entries, object_value
 from utils.release import (
     has_python_distribution,
+    has_r_distribution,
     normalize_distribution_channel,
 )
 
@@ -139,9 +140,25 @@ def build_release_page(ctx):
         normalize_distribution_channel(channel) for channel in channels
     }
 
-    version_guidance = (
-        "`pyproject.toml` is the source of truth for the project version."
-    )
+    template_name = str(ctx.get("_template_name", "")).strip().lower()
+    if template_name == "r":
+        version_guidance = (
+            "`DESCRIPTION` is the source of truth for the package version."
+        )
+        version_file = "DESCRIPTION"
+        version_field = "Version"
+    elif template_name == "python":
+        version_guidance = (
+            "`pyproject.toml` is the source of truth for the project version."
+        )
+        version_file = "pyproject.toml"
+        version_field = "project.version"
+    else:
+        version_guidance = (
+            "The version recorded in the project metadata is the release baseline."
+        )
+        version_file = "the project metadata"
+        version_field = "version"
     if ctx.get("include_metadata", False):
         version_guidance += " The metadata workflow validates the software metadata."
 
@@ -166,7 +183,7 @@ def build_release_page(ctx):
             "",
             "## Release process",
             "",
-            "1. Update `project.version` in `pyproject.toml`.",
+            f"1. Update `{version_field}` in `{version_file}`.",
             "2. Move completed entries from `Unreleased` in `CHANGELOG.md` into a "
             "section for the new version.",
             "3. Run the metadata, test, documentation, and release checks configured "
@@ -187,6 +204,22 @@ def build_release_page(ctx):
                 "```",
             ]
         )
+    elif template_name == "r" and has_r_distribution(channels):
+        lines.extend(
+            [
+                "4. Run `Rscript tools/check_release.R`, then create and push a "
+                "`v<version>` tag after the source package passes `R CMD check`.",
+                "",
+                "Run the release checks locally with:",
+                "",
+                "```bash",
+                "Rscript tools/check_release.R",
+                f"Rscript tools/check_release.R v{version}",
+                "R CMD build .",
+                "R CMD check --no-manual --as-cran *.tar.gz",
+                "```",
+            ]
+        )
 
     setup_notes = []
     if "pypi" in normalized_channels:
@@ -194,13 +227,27 @@ def build_release_page(ctx):
             "- **PyPI:** configure a trusted publisher for the GitHub `pypi` "
             "environment before the first tagged release."
         )
+    if "cran" in normalized_channels:
+        setup_notes.append(
+            "- **CRAN:** inspect the generated check results and submit the source "
+            "package through CRAN's external submission process."
+        )
+    if "bioconductor" in normalized_channels:
+        setup_notes.append(
+            "- **Bioconductor:** follow the current Bioconductor package submission "
+            "and review process after local and CI checks pass."
+        )
     if (
         "github releases" in normalized_channels
         or "github release" in normalized_channels
     ):
+        artifact_label = (
+            "the checked R source package"
+            if template_name == "r"
+            else "source and Python distribution artifacts"
+        )
         setup_notes.append(
-            "- **GitHub Releases:** tagged releases are created with source and "
-            "Python distribution artifacts."
+            f"- **GitHub Releases:** tagged releases are created with {artifact_label}."
         )
     if normalized_channels & {"github container registry", "ghcr", "ghcr.io"}:
         setup_notes.append(
@@ -221,6 +268,8 @@ def build_release_page(ctx):
         "ghcr.io",
         "docker hub",
         "dockerhub",
+        "cran",
+        "bioconductor",
     }
     manual_channels = [
         channel

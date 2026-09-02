@@ -1,8 +1,9 @@
 # For service integrators
 
-Integration services map their own data to the published
-[RSM 1.0.0 schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json).
-SMP, DSW, form, and API conversion stays in the integration service.
+Integration services map their own data to the published RSM schema. The
+[generated field reference](../contract/rsm-fields.md) reflects the exact
+schema version pinned by this generator. SMP, DSW, form, and API conversion
+stays in the integration service.
 
 ```text
 service data
@@ -15,8 +16,13 @@ service data
 ## Generator environment
 
 Install Copier, `rsm-schema`, and `rs-files-templates` in the same Python
-environment. This repository's `pyproject.toml` pins the tested revisions until
-the upstream packages are published on PyPI.
+environment. This repository's dependency declarations follow upstream `main`
+during development, while `poetry.lock` records the exact revisions tested by CI.
+
+The latter two packages are generator-only: generated repositories do not
+depend on them. The repository maintenance and CI checks verify their public
+schema and file-model APIs together, so an incompatible upstream update fails
+before deployment rather than changing generated output silently.
 
 The template runs source-side finalization tasks, so Copier requires
 `--trust` on the command line or `unsafe=True` through its Python API. Trust
@@ -32,17 +38,19 @@ Validate the public payload first, then add the separate generator selector:
 from pathlib import Path
 
 from copier import run_copy
-from rsm_schema import RSMMetadata
+from rsm_schema import RSMMetadata, validate_document
 
 
 def generate_project(payload: dict, destination: Path, template_ref: str) -> Path:
     """Validate RSM metadata and render one trusted project template."""
     template_type = payload["template_type"]
-    metadata = RSMMetadata.model_validate(
-        {name: value for name, value in payload.items() if name != "template_type"}
-    )
+    document = {
+        name: value for name, value in payload.items() if name != "template_type"
+    }
+    validate_document(document)
+    metadata = RSMMetadata.model_validate(document)
     run_copy(
-        "https://github.com/LUMC-DCC/cookiecutter-templates.git",
+        "https://github.com/LUMC-DCC/rs-repo-templates.git",
         destination,
         data={"template_type": template_type, **metadata.model_dump(exclude_none=True)},
         vcs_ref=template_ref,
@@ -55,20 +63,24 @@ def generate_project(payload: dict, destination: Path, template_ref: str) -> Pat
 
 Use a unique empty destination for each request. Archive that directory only
 after Copier returns successfully. Keep `.copier-answers.yml` in the archive:
-it records the canonical template source, release, selected language scaffold,
+it records the canonical template source, release, selected repository scaffold,
 and RSM answers needed for later updates.
 
-`template_type` accepts `python` or `r` and is not part of RSM.
+`template_type` is not part of RSM. Its controlled choices are discovered from
+the available scaffold directories and exposed by Copier's questionnaire.
 `programming_languages` describes the generated software and may contain
 multiple languages; it does not select a template. Treat `template_type` as
-immutable after generation. Moving a repository to another language scaffold
-is a deliberate migration, not a template update.
+immutable after generation. Moving a repository to a different scaffold is a deliberate migration, not a template update.
 
 Only `project_slug` is required by RSM. Omit unavailable optional properties.
 Structured values and controlled choices come directly from the JSON Schema;
 do not infer a separate contract from `copier.yml` or the derived questions.
-The selected language adds its own slug constraint during prompting and again
+The selected scaffold adds its own slug constraint during prompting and again
 during finalization.
+
+Use `validate_document()` before constructing generated Pydantic models. It is
+the authoritative validation path for JSON Schema conditionals such as the
+requirement that a non-empty contributor list credit an author.
 
 ## Update API
 
@@ -104,12 +116,13 @@ Controlled multi-selects use `entries`, including documentation types,
 community files, test types, interfaces, distribution channels, and
 containerization. Empty selections omit those capabilities. Scalar selectors,
 such as `documentation_builder` and `project_manager`, may be empty; the
-language policy chooses the documented baseline when generation still needs
+template policy chooses the documented baseline when generation still needs
 one.
 
-CI workflows are derived from selected capabilities. Metadata, docs, tests,
-quality, security, changelog, licensing, containers, and distribution workflows
-appear only when their corresponding inputs require them. The minimal
-pre-commit file is unconditional because it protects template updates.
+CI workflows follow capabilities supported by the selected scaffold. Metadata,
+docs, tests, quality, security, changelog, licensing, containers, and
+distribution workflows appear only when both the input and scaffold require
+them. The generic scaffold also includes an unconditional repository-integrity
+workflow; every scaffold includes a minimal pre-commit file for update safety.
 
 Use `_contracts/field_usage.json` for the complete field-to-artifact map.

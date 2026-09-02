@@ -1,15 +1,19 @@
 # LUMC research software templates
 
-[![CI](https://github.com/LUMC-DCC/cookiecutter-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/LUMC-DCC/cookiecutter-templates/actions/workflows/ci.yml) [![Documentation](https://img.shields.io/badge/docs-online-blue?labelColor=gray)](https://lumc-dcc.github.io/cookiecutter-templates/)
+[![CI](https://github.com/LUMC-DCC/rs-repo-templates/actions/workflows/ci.yml/badge.svg)](https://github.com/LUMC-DCC/rs-repo-templates/actions/workflows/ci.yml) [![Documentation](https://img.shields.io/badge/docs-online-blue?labelColor=gray)](https://lumc-dcc.github.io/rs-repo-templates/)
 
 Service-agnostic Copier templates for maintainable, FAIR research software
-repositories. Python is the reference implementation; the shared contract and
-finalization layer are designed for additional language templates.
+repositories. The generic scaffold provides a language-neutral backbone;
+Python and R provide installable, ecosystem-aware package scaffolds.
 
 The public input contract comes from
 [rsm-schema](https://github.com/LUMC-DCC/rsm-schema). Reusable metadata, legal,
 and community files come from
 [rs-files-templates](https://github.com/LUMC-DCC/rs-files-templates).
+That package also owns the metadata-only README and six independent Markdown
+documentation page models. This repository inserts badges after generation,
+selects the requested pages, and owns all generic, Python, R, and
+documentation-builder-specific additions.
 
 ## Generate a project
 
@@ -27,18 +31,17 @@ Copier's Git-aware three-way merge.
 
 ## Documentation
 
-- [Use a generated project](https://lumc-dcc.github.io/cookiecutter-templates/users/)
-- [Integrate a generation service](https://lumc-dcc.github.io/cookiecutter-templates/integrators/)
-- [Develop the templates](https://lumc-dcc.github.io/cookiecutter-templates/developers/)
-- [Understand the architecture](https://lumc-dcc.github.io/cookiecutter-templates/architecture/)
+- [Use a generated project](https://lumc-dcc.github.io/rs-repo-templates/users/)
+- [Integrate a generation service](https://lumc-dcc.github.io/rs-repo-templates/integrators/)
+- [Develop the templates](https://lumc-dcc.github.io/rs-repo-templates/developers/)
+- [Understand the architecture](https://lumc-dcc.github.io/rs-repo-templates/architecture/)
 
 ## Development
 
 ```bash
 poetry install --with docs,dev
 poetry run pre-commit install
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 poetry run pre-commit run --all-files
 poetry run ruff check .
 poetry run ruff format --check .

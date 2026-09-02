@@ -1,20 +1,25 @@
 # Context reference
 
-The public context is the published
-[RSM 1.0.0 JSON Schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json).
+The public context is the published RSM JSON Schema. The generated
+[RSM field reference](rsm-fields.md) shows the fields, shapes, requiredness,
+defaults, descriptions, and controlled values from the exact locked schema.
 Its [Python API](https://lumc-dcc.github.io/rsm-schema/api.html) provides the
 matching `RSMMetadata` model and schema-inspection helpers.
 
-Only `project_slug` is required. Optional properties should be omitted when no
-value is available. Repeatable values and nested shapes are defined by the
-schema; integrators should not infer them from Copier's questionnaire.
+Optional properties should be omitted when no value is available. Repeatable
+values and nested shapes are defined by the schema; integrators should not
+infer them from Copier's questionnaire.
+
+Validate complete payloads with `rsm_schema.validate_document()` before
+generation. Generated Pydantic models provide typed access, while the JSON
+Schema helper additionally enforces conditional contract rules.
 
 ## Local policy
 
 The generated Copier questions add hidden values from
 `_config/template_policies.json`:
 
-- language-specific `project_slug` constraints
+- template-specific `project_slug` constraints
 - documentation builders supported by each template
 - test frameworks, quality tools, and project managers supported by each
   template
@@ -26,7 +31,7 @@ select a template directory.
 ## Field usage
 
 `_contracts/field_usage.json` records where each RSM field is used and its
-status per language template. The [field-usage table](field-usage.md) is
+status per repository template. The [field-usage table](field-usage.md) is
 generated from that map.
 
 Status meanings:
@@ -46,10 +51,9 @@ completeness.
 After changing local policy or field usage, run:
 
 ```bash
-poetry run python _scripts/build_copier_questions.py --write
-poetry run python _scripts/build_field_usage_docs.py --write
+poetry run python _scripts/maintain_repository.py --write
 ```
 
 Public field changes belong in `rsm-schema`. Reusable-file changes belong in
-`rs-files-templates`; update the pinned dependency here after the upstream
+`rs-files-templates`; refresh the dependency lock here after the upstream
 change is released or committed.

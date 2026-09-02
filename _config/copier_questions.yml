@@ -1,13 +1,22 @@
+template_type:
+  type: str
+  help: Repository scaffold to generate.
+  choices:
+    Generic: generic
+    Python: python
+    R: r
 project_name:
   type: str
   default: ''
   help: Human-readable project title.
 project_slug:
   type: str
-  default: '{% if template_type == ''python'' %}my_awesome_project{% elif template_type == ''r'' %}my.awesome.project{%
-    else %}project{% endif %}'
+  default: '{% if template_type == ''generic'' %}project{% elif template_type == ''python'' %}my_awesome_project{%
+    elif template_type == ''r'' %}my.awesome.project{% else %}project{% endif %}'
   help: Machine-readable package and repository name. Consumers apply their own additional slug constraints.
-  validator: '{% if template_type == ''python'' and (not (project_slug | regex_search(''^[a-z][a-z0-9_]*$''))
+  validator: '{% if template_type == ''generic'' and (not (project_slug | regex_search(''^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$'')))
+    %}Use a repository-safe name: start and end with an ASCII letter or digit, with letters, digits, dots,
+    hyphens, or underscores in between.{% elif template_type == ''python'' and (not (project_slug | regex_search(''^[a-z][a-z0-9_]*$''))
     or project_slug in [''and'', ''as'', ''assert'', ''async'', ''await'', ''break'', ''class'', ''continue'',
     ''def'', ''del'', ''elif'', ''else'', ''except'', ''finally'', ''for'', ''from'', ''global'', ''if'',
     ''import'', ''in'', ''is'', ''lambda'', ''nonlocal'', ''not'', ''or'', ''pass'', ''raise'', ''return'',
@@ -56,8 +65,8 @@ funding:
   type: yaml
   default:
     entries: []
-  help: Public funding records. Entries may include funder, award_number, award_title, grant_url, and
-    project_code.
+  help: Public funding records. Entries may include funder, funder identifiers and URLs, award_number,
+    award_title, grant_url, and project_code.
   multiline: true
 motivation:
   type: yaml
@@ -117,6 +126,13 @@ licensing:
     compatibility_check: ''
   help: License text or SPDX identifier and the selected dependency-license compatibility method.
   multiline: true
+access:
+  type: yaml
+  default:
+    type: ''
+    details: ''
+  help: How users can obtain or use the software, independently of its copyright license.
+  multiline: true
 include_metadata:
   type: bool
   default: false
@@ -146,6 +162,11 @@ community_files:
   help: Standard root community files the project provides. CONTRIBUTING.md and SUPPORT.md imply the corresponding
     GitHub collaboration files.
   multiline: true
+code_review_policy:
+  type: str
+  default: ''
+  help: Public code-review policy for proposed changes, including reviewer expectations, approval requirements,
+    and merge conditions. Markdown is supported.
 support_routes:
   type: yaml
   default:
@@ -175,8 +196,8 @@ software_functions:
   type: yaml
   default:
     entries: []
-  help: Functions or operations performed by the software. Entries may include summary, operation, input,
-    output, cmd, and note.
+  help: Functions or operations performed by the software. Entries may include operations, topics, inputs,
+    outputs, cmd, and note.
   multiline: true
 interfaces:
   type: yaml
@@ -324,26 +345,32 @@ data_management:
   multiline: true
 template_defaults:
   type: yaml
-  default: '{% if template_type == ''python'' %}{"project_slug": "my_awesome_project"}{% elif template_type
-    == ''r'' %}{"project_slug": "my.awesome.project"}{% else %}{}{% endif %}'
+  default: '{% if template_type == ''generic'' %}{"project_slug": "project"}{% elif template_type == ''python''
+    %}{"project_slug": "my_awesome_project"}{% elif template_type == ''r'' %}{"project_slug": "my.awesome.project"}{%
+    else %}{}{% endif %}'
   when: false
 template_schemas:
   type: yaml
-  default: '{% if template_type == ''python'' %}{"project_slug": {"pattern": "^[a-z][a-z0-9_]*$", "not":
-    {"enum": ["and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del", "elif",
-    "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "nonlocal",
-    "not", "or", "pass", "raise", "return", "try", "while", "with", "yield"]}, "description": "Use a lowercase
-    Python identifier: start with a letter, then use lowercase letters, digits, or underscores; Python
-    keywords are not allowed."}}{% elif template_type == ''r'' %}{"project_slug": {"minLength": 2, "pattern":
-    "^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])$", "description": "Use an R package name of at least two ASCII
-    letters, digits, or dots; start with a letter and do not end with a dot."}}{% else %}{}{% endif %}'
+  default: '{% if template_type == ''generic'' %}{"project_slug": {"pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$",
+    "description": "Use a repository-safe name: start and end with an ASCII letter or digit, with letters,
+    digits, dots, hyphens, or underscores in between."}}{% elif template_type == ''python'' %}{"project_slug":
+    {"pattern": "^[a-z][a-z0-9_]*$", "not": {"enum": ["and", "as", "assert", "async", "await", "break",
+    "class", "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global", "if",
+    "import", "in", "is", "lambda", "nonlocal", "not", "or", "pass", "raise", "return", "try", "while",
+    "with", "yield"]}, "description": "Use a lowercase Python identifier: start with a letter, then use
+    lowercase letters, digits, or underscores; Python keywords are not allowed."}}{% elif template_type
+    == ''r'' %}{"project_slug": {"minLength": 2, "pattern": "^[A-Za-z](?:[A-Za-z0-9.]*[A-Za-z0-9])$",
+    "description": "Use an R package name of at least two ASCII letters, digits, or dots; start with a
+    letter and do not end with a dot."}}{% else %}{}{% endif %}'
   when: false
 template_supported_choices:
   type: yaml
-  default: '{% if template_type == ''python'' %}{"documentation_builder": ["mkdocs", "zensical", "sphinx"],
+  default: '{% if template_type == ''generic'' %}{"documentation_builder": ["mkdocs", "zensical", "sphinx"],
+    "test_frameworks": [], "quality_tools": {"formatter": [], "linter": [], "type_checker": []}, "project_manager":
+    []}{% elif template_type == ''python'' %}{"documentation_builder": ["mkdocs", "zensical", "sphinx"],
     "test_frameworks": ["pytest"], "quality_tools": {"formatter": ["ruff"], "linter": ["ruff"], "type_checker":
     ["mypy"]}, "project_manager": ["uv", "poetry", "pdm", "hatch", "pixi", "pip"]}{% elif template_type
     == ''r'' %}{"documentation_builder": ["pkgdown"], "test_frameworks": ["testthat"], "quality_tools":
-    {"formatter": [], "linter": [], "type_checker": []}, "project_manager": ["renv", "rix"]}{% else %}{}{%
-    endif %}'
+    {"formatter": ["styler"], "linter": ["lintr"], "type_checker": []}, "project_manager": ["renv", "rix"]}{%
+    else %}{}{% endif %}'
   when: false

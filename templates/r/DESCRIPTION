@@ -1,0 +1,44 @@
+{% macro r_string(value) -%}
+"{{ value | string | replace("\\", "\\\\") | replace("\"", "\\\"") | replace("\n", " ") }}"
+{%- endmacro %}
+{% set contributor_state = namespace(has_author=false, has_maintainer=false) %}
+{% for contributor in contributors.entries %}
+{% if "Original author" in contributor.roles or "Co-author" in contributor.roles %}
+{% set contributor_state.has_author = true %}
+{% endif %}
+{% if "Maintainer" in contributor.roles %}
+{% set contributor_state.has_maintainer = true %}
+{% endif %}
+{% endfor %}
+{% set suggested_packages = [] %}
+{% if test_types.entries %}
+{% set _ = suggested_packages.append("testthat (>= 3.0.0)") %}
+{% endif %}
+{% if quality_tools.formatter == "styler" and quality_tools.formatter in template_supported_choices.quality_tools.formatter %}
+{% set _ = suggested_packages.append("styler") %}
+{% endif %}
+{% if quality_tools.linter == "lintr" and quality_tools.linter in template_supported_choices.quality_tools.linter %}
+{% set _ = suggested_packages.append("lintr") %}
+{% endif %}
+{% if documentation_types.entries and documentation_builder == "pkgdown" %}
+{% set _ = suggested_packages.append("pkgdown") %}
+{% endif %}
+Package: {{ project_slug }}
+Title: {{ (project_name or project_slug) | replace("\n", " ") }}
+Version: {{ versioning.version or "0.1.0" }}
+Authors@R: {% if contributors.entries %}c(
+{% for contributor in contributors.entries %}{% set person_roles = namespace(values=[]) %}{% if "Original author" in contributor.roles or "Co-author" in contributor.roles or (loop.first and not contributor_state.has_author) %}{% set _ = person_roles.values.append("aut") %}{% endif %}{% if "Maintainer" in contributor.roles or (loop.first and not contributor_state.has_maintainer) %}{% set _ = person_roles.values.append("cre") %}{% endif %}{% if "Contributor" in contributor.roles %}{% set _ = person_roles.values.append("ctb") %}{% endif %}{% if "Supervisor" in contributor.roles %}{% set _ = person_roles.values.append("ths") %}{% endif %}{% if "Principal investigator" in contributor.roles %}{% set _ = person_roles.values.append("led") %}{% endif %}{% if not person_roles.values %}{% set _ = person_roles.values.append("ctb") %}{% endif %}
+    person({% if contributor.given_names is defined and contributor.given_names %}given = {{ r_string(contributor.given_names) }}{% elif contributor.name is defined and contributor.name %}given = {{ r_string(contributor.name) }}{% else %}given = "Project member"{% endif %}{% if contributor.family_names is defined and contributor.family_names %}, family = {{ r_string(contributor.family_names) }}{% endif %}{% if contributor.email is defined and contributor.email %}, email = {{ r_string(contributor.email) }}{% endif %}, role = c({% for role in person_roles.values %}{{ r_string(role) }}{{ ", " if not loop.last else "" }}{% endfor %}){% if contributor.orcid is defined and contributor.orcid %}, comment = c(ORCID = {{ r_string(contributor.orcid | replace("https://orcid.org/", "")) }}){% endif %}){{ "," if not loop.last else "" }}
+{% endfor %}  ){% else %}person("Project", "Maintainer", email = "maintainer@example.org", role = c("aut", "cre")){% endif %}{{ "\n" -}}
+Description: {{ (project_long_description or project_short_description or "Research software package scaffold. Add a complete public package description before release.") | replace("\n", " ") }}
+License: {% if licensing.license == "MIT" %}MIT + file LICENSE{% elif licensing.license == "Apache-2.0" %}Apache License (>= 2) + file LICENSE{% elif licensing.license %}file LICENSE{% else %}MIT{% endif %}{{ "\n" -}}
+Encoding: UTF-8
+Depends: R (@@R_DEPENDS_VERSION@@)
+{% if keywords.entries %}Keywords: {{ keywords.entries | join(", ") }}
+{% endif %}{% if urls.repository or urls.homepage or urls.documentation %}URL: {{ [urls.repository, urls.homepage, urls.documentation] | reject("equalto", "") | join(", ") }}
+{% endif %}{% set support_urls = namespace(values=[]) %}{% for route in support_routes.entries %}{% if route.url is defined and route.url %}{% set _ = support_urls.values.append(route.url) %}{% endif %}{% endfor %}{% if support_urls.values %}BugReports: {{ support_urls.values[0] }}
+{% endif %}{% if suggested_packages %}Suggests:
+{% for package in suggested_packages %}    {{ package }}{{ "," if not loop.last else "" }}
+{% endfor %}{% endif %}{% if test_types.entries %}Config/testthat/edition: 3
+{% endif %}{% if documentation_types.entries and documentation_builder == "pkgdown" %}Config/Needs/website: pkgdown
+{% endif %}

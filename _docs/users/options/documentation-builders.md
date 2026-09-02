@@ -16,6 +16,13 @@ If no documentation builder is selected, Python projects use plain Markdown.
 If `documentation_types.entries` is empty, no documentation scaffold is
 generated, regardless of the selected builder.
 
+## R options
+
+R packages support `pkgdown`. It builds the package README, function reference,
+and release news into `site/`, while the generated narrative pages remain under
+`docs/`. Leaving the builder empty keeps those pages as plain Markdown and
+removes documentation CI.
+
 ## MkDocs
 
 MkDocs projects use a repository-root `mkdocs.yml` and Markdown files directly

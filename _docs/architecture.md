@@ -1,8 +1,9 @@
 # Architecture
 
-This repository composes language-aware Copier projects from a published
-metadata contract and reusable repository-file renderers. Python is the
-reference implementation; R is an early extension target.
+This repository composes updateable Copier repositories from a published
+metadata contract and reusable repository-file renderers. The generic scaffold
+is language-neutral, while Python and R provide mature implementation
+scaffolds using their native package conventions.
 
 ## Ownership boundaries
 
@@ -10,17 +11,28 @@ reference implementation; R is an early extension target.
 | --- | --- |
 | [rsm-schema](https://github.com/LUMC-DCC/rsm-schema) | Public fields, JSON Schema, defaults, controlled values, and Pydantic models. |
 | [rs-files-templates](https://github.com/LUMC-DCC/rs-files-templates) | Typed rendering of reusable, language-independent repository files. |
-| This repository | Copier orchestration, language policy, source scaffolds, generated CI, and cross-component integration. |
+| This repository | Copier orchestration, scaffold policy, implementation layouts, generated CI, and cross-component integration. |
 | [rs-metadata](https://github.com/LUMC-DCC/rs-metadata) | Validation of generated research-software metadata and cross-file consistency. |
 
-The published [RSM 1.0.0 JSON Schema](https://lumc-dcc.github.io/rsm-schema/schema/1.0.0/rsm.schema.json)
-is the sole public input contract. This repository does not maintain a second
-schema.
+The published RSM JSON Schema is the sole public input contract. Its current
+canonical URL and contents are exposed through the generated
+[RSM field reference](contract/rsm-fields.md); this repository does not
+maintain a second schema.
 
-`rs-files-templates` renders CodeMeta, CFF, license, Zenodo, changelog,
-community, issue, and pull request files. Their prose and format mappings are
-owned upstream. This repository selects models and verifies them inside a
-complete generated project.
+`rs-files-templates` renders README, six independent Markdown documentation
+pages, CodeMeta, CFF, license, Zenodo, changelog, community, issue, and pull
+request files. Every reusable template input is a published RSM field.
+
+`ReadmeModel` resolves purpose, audience, installation, usage, citation,
+support, licensing, and development guidance from metadata in place. This
+repository post-processes the result only for verified badges and preserves
+project-owned content below the README marker.
+
+Documentation builders are entirely local policy. `rs-files-templates`
+provides separate overview, usage, deployment, developer, reference, and legal
+Markdown models; this repository selects them and then attaches scaffold paths,
+API directives, navigation, dependencies, workflows, and commands for MkDocs,
+Zensical, Sphinx, pkgdown, or plain Markdown.
 
 ## Generation flow
 
@@ -31,30 +43,54 @@ RSM payload + template_type
 RSM validation
     |
     v
-Copier questions + language policy
+derived Copier questions + selected scaffold policy
     |
     v
-language scaffold rendering
+generic, Python, or R scaffold rendering
     |
     v
 source-side finalization task
-    |-- validates the recorded answers again
-    |-- renders reusable files with rs-files-templates
-    `-- selects docs, tests, CI, tools, and interface scaffolds
+    |-- validates recorded answers again
+    |-- renders reusable files through rs-files-templates
+    |-- selects CI, tools, implementation capabilities, and a docs builder
+    |-- attaches builder-specific docs configuration
+    `-- inserts verified badges into the metadata-rendered README
     |
     v
 generated repository + .copier-answers.yml
 ```
 
-`template_type` is the one generator-only answer. It selects `templates/python`
-or `templates/r`; `programming_languages` continues to describe the software
-itself and may contain several languages.
+`template_type` is the one generator-only answer:
 
-`_scripts/build_copier_questions.py` derives public questions from the installed
-RSM schema. `_config/template_policies.json` contributes only language-specific
-slug constraints and supported implementation choices. The finalizer converts
-Copier's nullable answers to the empty sentinels expected by the existing
-selection helpers before validating `RSMMetadata`.
+| Value | Result |
+| --- | --- |
+| `generic` | Repository hygiene, metadata, community files, language-neutral docs, and applicable GitHub automation without source-code assumptions. |
+| `python` | The shared backbone plus Python package architecture, interfaces, tests, quality tools, containers, and release workflows. |
+| `r` | The shared backbone plus an installable R package, testthat, styler/lintr, pkgdown, reproducible-environment guidance, package CI, containers, and source-package releases. |
+
+`programming_languages` continues to describe the software itself and may
+contain several languages. It does not select a scaffold.
+
+`_scripts/maintain_repository.py` derives the complete Copier question include
+and RSM field reference from the installed schema. It discovers scaffold choices
+from `templates/`; `_config/template_policies.json` contributes only
+scaffold-specific slug constraints and supported implementation choices. The
+same command verifies that every public `rs-files-templates` model is
+integrated and remains compatible with RSM.
+
+## Generator dependencies
+
+`rsm-schema` and `rs-files-templates` are generator dependencies, not
+generated-project dependencies. Their declarations follow upstream `main`
+during development; `poetry.lock` records the exact revisions tested by CI.
+They are imported only by source-side finalization and do not appear in
+generated package manifests.
+
+This boundary keeps public schema ownership and reusable file rendering out of
+individual scaffolds. Generation therefore requires these packages and stops
+with an actionable error if an upstream API is incompatible. Repository
+maintenance checks detect missing, stale, duplicate, or contract-incompatible
+file models before generation changes are merged.
 
 ## Update model
 
@@ -65,37 +101,41 @@ project with a Git-aware three-way merge.
 | Generated content | Update behavior |
 | --- | --- |
 | `.copier-answers.yml` | Copier-owned record; commit it and never edit it manually. |
-| CI, package configuration, metadata, and standard repository files | Template-managed but merge-aware; local edits are preserved or surfaced as conflicts. |
-| Generated source, tests, and narrative docs | Starting code that project teams may freely evolve; template changes merge when possible. |
-| Files created only by the project | Not known to Copier and left untouched. |
+| CI, configuration, metadata, and standard repository files | Template-managed but merge-aware; local edits are preserved or surfaced as conflicts. |
+| Standard README sections | Regenerated by `rs-files-templates` from current RSM answers. |
+| README content below its preservation marker | Project-owned and retained when the standard README is refreshed. |
+| Generated source, tests, and narrative docs | Starting content that project teams may evolve; template changes merge when possible. |
+| Files created only by the project | Unknown to Copier and left untouched. |
 | Files intentionally deleted by the project | Remain deleted unless explicitly configured otherwise. |
 
 The finalization task is deterministic and idempotent because Copier may execute
 it for old, current, and new renders during an update. It remains in this
-template repository and is not copied into generated projects.
+repository and is not copied into generated projects.
 
 Because tasks execute template code, generation and updates require explicit
 trust. Integrators should trust only this repository at reviewed release tags.
-Generated pre-commit configuration includes a merge-conflict check so unresolved
-update markers cannot be committed accidentally.
+Generated pre-commit configuration checks unresolved merge markers so update
+conflicts cannot be committed accidentally.
 
 ## Repository layout
 
 - `copier.yml` is the single generation entry point.
-- `_config/` contains the derived RSM questions and small language policies.
+- `_config/` contains derived Copier questions and small scaffold policies.
 - `_contracts/field_usage.json` tracks implementation status and targets.
 - `_copier_tasks/` contains finalization actions, renderers, and utilities.
-- `templates/python/` and `templates/r/` contain language scaffolds.
+- `templates/generic/` contains the language-neutral repository backbone.
+- `templates/python/` and `templates/r/` contain implementation scaffolds.
 - `_scripts/` contains repository maintenance and verification commands.
-- `tests/` covers schema derivation, generated behavior, and tagged updates.
+- `tests/` covers schema derivation, generated behavior, docs, and updates.
 
 ## Verification
 
-CI checks derived questions and field-usage documentation, audits immutable
+CI checks every derived artifact and generator dependency, audits immutable
 GitHub Action pins, runs repository quality checks, renders representative
 projects, verifies tagged Copier updates, runs generated tests, builds every
-supported Python documentation variant, and builds these docs strictly.
+generic, Python, and R documentation variant, and builds this repository's
+docs strictly.
 
 Reusable file content is tested upstream. Integration tests here cover
-selection, schema-valid output where useful, and interactions with the rest of
-the generated repository.
+selection, schema-valid output where useful, and interactions inside complete
+generated repositories.

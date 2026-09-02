@@ -21,7 +21,7 @@ def build_license_label(license_value):
     return f"`{value}`"
 
 
-def build_legal_lines(license_value, compatibility_notes):
+def build_legal_lines(license_value, compatibility_notes, license_path="LICENSE"):
     """Build generated legal and licensing lines.
 
     Parameters
@@ -30,6 +30,8 @@ def build_legal_lines(license_value, compatibility_notes):
         SPDX license identifier, custom license text, or an empty string.
     compatibility_notes : str
         Public notes about license compatibility.
+    license_path : str, default="LICENSE"
+        Repository path containing the complete human-readable terms.
 
     Returns
     -------
@@ -41,7 +43,7 @@ def build_legal_lines(license_value, compatibility_notes):
         label = build_license_label(license_value)
         lines.append(
             f"This project is licensed under {label}. "
-            "See `LICENSE` for the full license text."
+            f"See `{license_path}` for the full license text."
         )
     if compatibility_notes:
         lines.append(compatibility_notes)
@@ -49,7 +51,11 @@ def build_legal_lines(license_value, compatibility_notes):
     return lines
 
 
-def build_legal_section(license_value, compatibility_notes):
+def build_legal_section(
+    license_value,
+    compatibility_notes,
+    license_path="LICENSE",
+):
     """Build the generated legal and licensing section.
 
     Parameters
@@ -58,13 +64,15 @@ def build_legal_section(license_value, compatibility_notes):
         SPDX license identifier, custom license text, or an empty string.
     compatibility_notes : str
         Public notes about license compatibility.
+    license_path : str, default="LICENSE"
+        Repository path containing the complete human-readable terms.
 
     Returns
     -------
     str
         Markdown section, or an empty string.
     """
-    lines = build_legal_lines(license_value, compatibility_notes)
+    lines = build_legal_lines(license_value, compatibility_notes, license_path)
     if not lines:
         return ""
 
@@ -76,6 +84,7 @@ def build_legal_page_content(
     compatibility_notes,
     regulatory_requirements=None,
     additional_regulatory_requirements="",
+    license_path="LICENSE",
 ):
     """Build content for the generated legal documentation page.
 
@@ -89,13 +98,15 @@ def build_legal_page_content(
         Controlled public regulatory and policy requirements.
     additional_regulatory_requirements : str, optional
         Additional public regulatory or policy requirements.
+    license_path : str, default="LICENSE"
+        Repository path containing the complete human-readable terms.
 
     Returns
     -------
     str
         Markdown content to append to a legal documentation page.
     """
-    lines = build_legal_lines(license_value, compatibility_notes)
+    lines = build_legal_lines(license_value, compatibility_notes, license_path)
     if not lines:
         lines = ["No project license has been selected yet."]
 

@@ -36,9 +36,7 @@ jobs:
         run: poetry run pre-commit validate-config
 
       - name: Check derived files
-        run: |
-          poetry run python _scripts/build_copier_questions.py --check
-          poetry run python _scripts/build_field_usage_docs.py --check
+        run: poetry run python _scripts/maintain_repository.py --check
 
       - name: Audit field usage statuses
         run: poetry run python _scripts/audit_field_usage_status.py

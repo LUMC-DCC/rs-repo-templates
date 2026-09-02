@@ -3,11 +3,17 @@
 Generated projects expose the same public facts in the formats used by package
 managers, citation tools, registries, archives, and container tooling.
 
+RSM access terms map to CodeMeta `isAccessibleForFree` and Schema.org
+`usageInfo`. Funding organizations retain stable funder identifiers and public
+URLs when supplied. These mappings are validated against the published LUMC
+CodeMeta profile by `rs-files-templates` and the generated metadata workflow.
+
 ## Metadata model
 
 When minimum metadata is selected, `codemeta.json` is the cross-ecosystem
 metadata anchor and `CITATION.cff` is its paired citation record. Python's
-`pyproject.toml` remains authoritative for package installation and versioning.
+`pyproject.toml` and R's `DESCRIPTION` remain authoritative for their native
+package installation and versioning fields.
 OCI labels repeat only the values their consumers understand. README and
 project documentation remain concise human-facing entry points.
 

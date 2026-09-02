@@ -1,4 +1,29 @@
 {
+  "generic": {
+    "defaults": {
+      "project_slug": "project"
+    },
+    "field_schemas": {
+      "project_slug": {
+        "pattern": "^[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?$",
+        "description": "Use a repository-safe name: start and end with an ASCII letter or digit, with letters, digits, dots, hyphens, or underscores in between."
+      }
+    },
+    "supported_choices": {
+      "documentation_builder": [
+        "mkdocs",
+        "zensical",
+        "sphinx"
+      ],
+      "test_frameworks": [],
+      "quality_tools": {
+        "formatter": [],
+        "linter": [],
+        "type_checker": []
+      },
+      "project_manager": []
+    }
+  },
   "python": {
     "defaults": {
       "project_slug": "my_awesome_project"
@@ -94,8 +119,12 @@
         "testthat"
       ],
       "quality_tools": {
-        "formatter": [],
-        "linter": [],
+        "formatter": [
+          "styler"
+        ],
+        "linter": [
+          "lintr"
+        ],
         "type_checker": []
       },
       "project_manager": [

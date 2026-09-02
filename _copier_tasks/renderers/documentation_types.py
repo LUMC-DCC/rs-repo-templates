@@ -1,32 +1,4 @@
-"""Build and normalize documentation-type content."""
-
-DOCUMENTATION_TYPES = {
-    "user": {
-        "label": "User guide",
-        "path": "usage.md",
-        "description": (
-            "installation, configuration, usage instructions, and runnable examples"
-        ),
-        "optional": True,
-    },
-    "deployment": {
-        "label": "Deployment notes",
-        "path": "deployment.md",
-        "description": (
-            "environment setup, deployment steps, and operational assumptions"
-        ),
-        "optional": True,
-    },
-    "developer": {
-        "label": "Developer guide",
-        "path": "developer.md",
-        "description": (
-            "architecture, local development, tests, contribution workflow, and "
-            "technical reference"
-        ),
-        "optional": True,
-    },
-}
+"""Build and normalize repository documentation-type content."""
 
 DOCUMENTATION_TYPE_ALIASES = {
     "api documentation": "developer",
@@ -44,26 +16,36 @@ DOCUMENTATION_TYPE_ALIASES = {
     "user guide": "user",
 }
 
+DOCUMENTATION_TYPES = {
+    "user": {
+        "label": "User guide",
+        "path": "usage.md",
+        "description": "installation, configuration, usage instructions, and examples",
+        "optional": True,
+    },
+    "deployment": {
+        "label": "Deployment notes",
+        "path": "deployment.md",
+        "description": (
+            "environment setup, deployment steps, and operational assumptions"
+        ),
+        "optional": True,
+    },
+    "developer": {
+        "label": "Developer guide",
+        "path": "developer.md",
+        "description": "local development, tests, contribution workflow, and reference",
+        "optional": True,
+    },
+}
+
 
 def normalize_documentation_type(value):
-    """Normalize one documentation type label.
-
-    Parameters
-    ----------
-    value : str
-        Documentation type from rendered context.
-
-    Returns
-    -------
-    str
-        Canonical documentation type, or an empty string when unsupported.
-    """
-    normalized = value.strip().lower().replace("_", " ").replace("-", " ")
+    """Normalize one repository documentation category."""
+    normalized = str(value or "").strip().lower().replace("_", " ").replace("-", " ")
     normalized = " ".join(normalized.split())
     normalized = DOCUMENTATION_TYPE_ALIASES.get(normalized, normalized)
-    if normalized in DOCUMENTATION_TYPES:
-        return normalized
-    return ""
+    return normalized if normalized in DOCUMENTATION_TYPES else ""
 
 
 def selected_documentation_types(entries):

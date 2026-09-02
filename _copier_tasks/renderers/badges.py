@@ -7,7 +7,7 @@ from renderers.community_files import selected_community_files
 from renderers.project_context.interoperability import interface_type_values
 from utils.containerization import has_container_recipe
 from utils.context import entries, object_value, resolve_choice, resolve_object_choice
-from utils.release import has_python_distribution
+from utils.release import has_python_distribution, has_r_distribution
 from utils.security import has_vulnerability_scanning
 
 
@@ -56,22 +56,7 @@ def shields_badge_url(label, message, color="blue", label_color="gray"):
 
 
 def markdown_badge(alt_text, image_url, link_url=""):
-    """Render one linked or unlinked Markdown badge.
-
-    Parameters
-    ----------
-    alt_text : str
-        Accessible badge label.
-    image_url : str
-        Badge image URL.
-    link_url : str, optional
-        Destination opened by the badge.
-
-    Returns
-    -------
-    str
-        Markdown badge.
-    """
+    """Render one repository-selected badge as Markdown."""
     image = f"![{alt_text}]({image_url})"
     return f"[{image}]({link_url})" if link_url else image
 
@@ -132,7 +117,9 @@ def primary_workflow(ctx):
     str
         Workflow file name, or an empty string when CI is not generated.
     """
-    is_python = str(ctx.get("_template_name", "")).strip().lower() == "python"
+    template_name = str(ctx.get("_template_name", "")).strip().lower()
+    is_python = template_name == "python"
+    is_r = template_name == "r"
     if is_python:
         if entries(ctx, "test_types"):
             return "tests.yml"
@@ -159,6 +146,26 @@ def primary_workflow(ctx):
             return "docs.yml"
         if has_vulnerability_scanning(ctx):
             return "security.yml"
+    if is_r:
+        if entries(ctx, "test_types"):
+            return "tests.yml"
+        quality_choices = (
+            resolve_object_choice(ctx, "quality_tools", "formatter")[1],
+            resolve_object_choice(ctx, "quality_tools", "linter")[1],
+        )
+        if any(quality_choices):
+            return "quality.yml"
+        requested_builder, documentation_builder = resolve_choice(
+            ctx,
+            "documentation_builder",
+            fallback="plain",
+        )
+        if (
+            entries(ctx, "documentation_types")
+            and requested_builder
+            and documentation_builder == "pkgdown"
+        ):
+            return "docs.yml"
     if ctx.get("include_metadata", False):
         return "metadata.yml"
     if "CHANGELOG.md" in selected_community_files(ctx):
@@ -173,6 +180,8 @@ def primary_workflow(ctx):
     if is_python and has_container_recipe(entries(ctx, "containerization")):
         return "containers.yml"
     if is_python and has_python_distribution(entries(ctx, "distribution_channels")):
+        return "distribution.yml"
+    if is_r and has_r_distribution(entries(ctx, "distribution_channels")):
         return "distribution.yml"
     return ""
 
@@ -207,7 +216,7 @@ def first_doi(ctx):
     return ""
 
 
-def build_readme_badges(ctx):
+def build_readme_badges(ctx, cwd=None):
     """Build README badges supported by supplied project metadata.
 
     Parameters
@@ -217,8 +226,8 @@ def build_readme_badges(ctx):
 
     Returns
     -------
-    str
-        Space-separated Markdown badges.
+    tuple[str, ...]
+        Markdown badges for capabilities present in the generated project.
     """
     badges = []
     repository_url = str(object_value(ctx, "urls", "repository")).rstrip("/")
@@ -227,6 +236,10 @@ def build_readme_badges(ctx):
     distribution_name = str(ctx.get("project_slug", "")).replace("_", "-")
 
     workflow = primary_workflow(ctx)
+    if workflow and cwd is not None:
+        workflow_path = cwd / ".github" / "workflows" / workflow
+        if not workflow_path.exists():
+            workflow = ""
     if github and workflow:
         workflow_url = f"{repository_url}/actions/workflows/{workflow}"
         badges.append(markdown_badge("CI", f"{workflow_url}/badge.svg", workflow_url))
@@ -261,6 +274,16 @@ def build_readme_badges(ctx):
             )
         )
 
+    if "cran" in channels and distribution_name:
+        package_name = quote(str(ctx.get("project_slug", "")), safe="-._")
+        badges.append(
+            markdown_badge(
+                "CRAN",
+                f"https://www.r-pkg.org/badges/version/{package_name}",
+                f"https://cran.r-project.org/package={package_name}",
+            )
+        )
+
     doi = first_doi(ctx)
     if doi:
         if "zenodo." in doi.lower():
@@ -287,4 +310,4 @@ def build_readme_badges(ctx):
             )
         )
 
-    return " ".join(badges)
+    return tuple(badges)

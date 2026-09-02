@@ -23,7 +23,7 @@ def finalize(project_root: Path, template_type: str) -> None:
     project_root
         Root of the generated or updated repository.
     template_type
-        Selected language scaffold.
+        Selected repository scaffold.
 
     Raises
     ------
@@ -39,7 +39,9 @@ def finalize(project_root: Path, template_type: str) -> None:
         from post_generation.optional_files import remove_optional_paths
         from post_generation.project_management import configure_project_manager
         from post_generation.public_files import update_public_context
+        from post_generation.python_runtime import configure_python_runtime
         from post_generation.quality import select_quality_tools
+        from post_generation.r_runtime import configure_r_runtime
         from post_generation.repository_files import render_repository_files
         from post_generation.testing import select_test_framework
         from post_generation.validation import validate_context
@@ -48,7 +50,7 @@ def finalize(project_root: Path, template_type: str) -> None:
             raise
         message = (
             "The Copier environment is missing a generator dependency. Install "
-            "this repository's pinned rsm-schema and rs-files-templates "
+            "this repository's locked rsm-schema and rs-files-templates "
             "dependencies before generating or updating a project."
         )
         raise RuntimeError(message) from error
@@ -60,19 +62,21 @@ def finalize(project_root: Path, template_type: str) -> None:
     select_container_recipes(ctx, project_root)
     select_community_files(ctx, project_root)
     spdx_id = render_repository_files(ctx, project_root)
-    update_license_integrations(project_root, spdx_id)
-    update_public_context(ctx, project_root)
+    update_license_integrations(ctx, project_root, spdx_id)
+    configure_python_runtime(ctx, project_root)
+    configure_r_runtime(ctx, project_root)
     configure_project_manager(ctx, project_root)
     select_quality_tools(ctx, project_root)
     select_test_framework(ctx, project_root)
     remove_optional_paths(ctx, project_root)
+    update_public_context(ctx, project_root)
 
 
 def main() -> None:
     """Run the Copier task command-line interface."""
     parser = argparse.ArgumentParser()
     parser.add_argument("project_root", type=Path)
-    parser.add_argument("template_type", choices=("python", "r"))
+    parser.add_argument("template_type")
     args = parser.parse_args()
     finalize(args.project_root.resolve(), args.template_type)
 

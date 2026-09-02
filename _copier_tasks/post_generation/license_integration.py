@@ -1,9 +1,11 @@
-"""Apply confirmed SPDX metadata to language-specific generated files."""
+"""Apply confirmed SPDX metadata to implementation-specific generated files."""
 
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 
+from utils.context import entries
 from utils.paths import remove_path
 
 
@@ -168,16 +170,59 @@ def update_container_license(cwd, spdx_id):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def update_license_integrations(cwd, spdx_id):
-    """Apply license metadata outside the package-owned license file.
+def update_r_license(ctx, cwd, spdx_id):
+    """Adapt template SPDX text to R's special MIT license-stub convention.
 
     Parameters
     ----------
+    ctx : dict
+        Normalized Copier context.
     cwd : pathlib.Path
         Generated project root.
     spdx_id : str or None
         Confirmed SPDX identifier.
     """
+    if str(ctx.get("_template_name", "")).strip().lower() != "r":
+        return
+    license_path = cwd / "LICENSE"
+    full_text_path = cwd / "LICENSE.md"
+    if spdx_id != "MIT" or not license_path.exists():
+        remove_path(full_text_path)
+        return
+
+    full_text_path.write_text(
+        license_path.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    contributor_names = [
+        str(contributor.get("name", "")).strip()
+        for contributor in entries(ctx, "contributors")
+        if str(contributor.get("name", "")).strip()
+    ]
+    project_label = str(
+        ctx.get("project_name") or ctx.get("project_slug") or "Project"
+    ).strip()
+    holder = ", ".join(contributor_names) or f"{project_label} contributors"
+    year = datetime.now(UTC).year
+    license_path.write_text(
+        f"YEAR: {year}\nCOPYRIGHT HOLDER: {holder}\n",
+        encoding="utf-8",
+    )
+
+
+def update_license_integrations(ctx, cwd, spdx_id):
+    """Apply license metadata outside the package-owned license file.
+
+    Parameters
+    ----------
+    ctx : dict
+        Normalized Copier context.
+    cwd : pathlib.Path
+        Generated project root.
+    spdx_id : str or None
+        Confirmed SPDX identifier.
+    """
+    update_r_license(ctx, cwd, spdx_id)
     update_pyproject_license(cwd, spdx_id)
     update_container_license(cwd, spdx_id)
     if not spdx_id:

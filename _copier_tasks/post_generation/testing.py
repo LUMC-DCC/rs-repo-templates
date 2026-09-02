@@ -1,4 +1,4 @@
-"""Resolve testing options for the selected language template."""
+"""Resolve testing options for the selected implementation template."""
 
 from utils.context import (
     entries,

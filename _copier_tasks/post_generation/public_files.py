@@ -1,12 +1,15 @@
 """Update generated public-facing project context files."""
 
-from post_generation.documentation import docs_source_dir, has_documentation
+from post_generation.documentation import (
+    attach_repository_documentation,
+    docs_source_dir,
+    has_documentation,
+)
+from post_generation.repository_files import model_from_context, validate_models
 from renderers.badges import build_readme_badges
-from renderers.documentation_types import build_readme_documentation_section
-from renderers.legal import build_legal_page_content, build_legal_section
+from renderers.legal import build_legal_page_content
 from renderers.project_context import (
     build_api_interfaces_section,
-    build_biotools_function_blocks,
     build_developer_functions_section,
     build_developer_interfaces_section,
     build_external_dependencies_section,
@@ -25,8 +28,15 @@ from renderers.release import (
     build_container_deployment_section,
     build_release_page,
 )
+from rs_files_templates import ReadmeModel, render_readme_text
 from utils.context import entries, object_entries, object_value
 from utils.markdown import append_sections, insert_before_first_marker
+
+README_END_MARKER = "<!-- rs-files-templates:README:end -->"
+README_CUSTOM_GUIDANCE = (
+    "<!-- Add project-specific README content below this line; it is preserved "
+    "when the generated README is refreshed. -->"
+)
 
 
 def overview_candidates(cwd):
@@ -92,32 +102,6 @@ def insert_line_after(path, anchor, line):
 
     lines.insert(index + 1, line)
     path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-
-
-def insert_after_title(path, text):
-    """Insert text after the first Markdown title when absent.
-
-    Parameters
-    ----------
-    path : pathlib.Path
-        Markdown file to update.
-    text : str
-        Markdown text to insert.
-    """
-    if not text or not path.exists():
-        return
-
-    content = path.read_text(encoding="utf-8")
-    if text in content:
-        return
-
-    lines = content.splitlines()
-    for index, line in enumerate(lines):
-        if line.startswith("# "):
-            lines.insert(index + 1, "")
-            lines.insert(index + 2, text)
-            path.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-            return
 
 
 def update_overview(ctx, cwd):
@@ -388,6 +372,36 @@ def update_policy_references(ctx, cwd):
         )
 
 
+def license_compatibility_note(ctx, cwd):
+    """Describe the effective dependency-license review mechanism.
+
+    Parameters
+    ----------
+    ctx : dict
+        Normalized Copier context.
+    cwd : pathlib.Path
+        Generated project root.
+
+    Returns
+    -------
+    str
+        Public compatibility statement, or an empty string when not selected.
+    """
+    method = object_value(ctx, "licensing", "compatibility_check")
+    if method == "Yes - manual check":
+        return "Dependency license compatibility is reviewed manually."
+    if method != "Yes - automated tooling":
+        return ""
+
+    workflow = cwd / ".github" / "workflows" / "license-compatibility.yml"
+    if workflow.exists():
+        return "Dependency license compatibility is checked automatically in CI."
+    return (
+        "Automated dependency-license checking is selected. Configure a "
+        "compatible checker when implementation dependencies are added."
+    )
+
+
 def update_legal(ctx, cwd):
     """Append legal context to the selected legal documentation page.
 
@@ -401,20 +415,19 @@ def update_legal(ctx, cwd):
     if not has_documentation(ctx):
         return
 
-    compatibility_method = object_value(ctx, "licensing", "compatibility_check")
-    compatibility_note = {
-        "Yes - automated tooling": (
-            "Dependency license compatibility is checked automatically in CI."
-        ),
-        "Yes - manual check": (
-            "Dependency license compatibility is reviewed manually."
-        ),
-    }.get(compatibility_method, "")
+    compatibility_note = license_compatibility_note(ctx, cwd)
+    license_path = (
+        "LICENSE.md"
+        if ctx.get("_template_name") == "r"
+        and object_value(ctx, "licensing", "license") == "MIT"
+        else "LICENSE"
+    )
     content = build_legal_page_content(
         object_value(ctx, "licensing", "license"),
         compatibility_note,
         object_entries(ctx, "regulatory_requirements", "selected"),
         object_value(ctx, "regulatory_requirements", "additional"),
+        license_path,
     )
     for legal_path in legal_candidates(cwd):
         if legal_path.exists():
@@ -423,7 +436,7 @@ def update_legal(ctx, cwd):
 
 
 def update_readme(ctx, cwd):
-    """Append concise public project context to the README.
+    """Compose the reusable README and preserve project-owned trailing content.
 
     Parameters
     ----------
@@ -432,76 +445,24 @@ def update_readme(ctx, cwd):
     cwd : pathlib.Path
         Generated project root.
     """
-    insert_after_title(
-        cwd / "README.md",
-        build_readme_badges(ctx),
-    )
+    model = model_from_context(ReadmeModel, ctx)
+    validate_models([model])
+    rendered = render_readme_text(model).rstrip()
+    badges = " ".join(build_readme_badges(ctx, cwd))
+    if badges:
+        title, remainder = rendered.split("\n", 1)
+        rendered = f"{title}\n\n{badges}\n{remainder.lstrip()}"
 
-    publication_note = build_publication_note(entries(ctx, "publications"))
-    insert_before_first_marker(
-        cwd / "README.md",
-        publication_note,
-        ("Homepage:", "Documentation:", "## "),
+    readme_path = cwd / "README.md"
+    existing = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
+    if README_END_MARKER in existing:
+        custom_content = existing.split(README_END_MARKER, 1)[1].lstrip("\n")
+    else:
+        custom_content = README_CUSTOM_GUIDANCE + "\n"
+    readme_path.write_text(
+        f"{rendered}\n\n{README_END_MARKER}\n{custom_content}",
+        encoding="utf-8",
     )
-
-    documentation_section = ""
-    if has_documentation(ctx):
-        documentation_section = build_readme_documentation_section(
-            entries(ctx, "documentation_types")
-        )
-    context_sections = build_project_context_sections(
-        ctx,
-        include_funding=False,
-        include_interoperability=False,
-        include_motivation_details=False,
-    )
-    platform_section = build_operating_systems_section(
-        entries(ctx, "operating_systems")
-    )
-    legal_section = build_legal_section(
-        object_value(ctx, "licensing", "license"),
-        "",
-    )
-    function_blocks = build_biotools_function_blocks(entries(ctx, "software_functions"))
-    policy_fallback = ""
-    if not has_documentation(ctx):
-        policy_fallback = "\n\n".join(
-            section
-            for section in (
-                build_resource_requirements_section(
-                    ctx.get("resource_requirements", "")
-                ),
-                build_sustainability_section(
-                    ctx.get("maintenance_level", ""),
-                    ctx.get("continuity_plan", ""),
-                    entries(ctx, "retirement_criteria"),
-                ),
-                build_security_and_data_section(
-                    object_value(ctx, "contacts", "security"),
-                    object_entries(ctx, "security_measures", "selected"),
-                    object_value(ctx, "security_measures", "additional"),
-                    object_value(ctx, "data_management", "sensitive_data_statement"),
-                    ctx.get("public_risk_notes", ""),
-                    object_value(ctx, "data_management", "dmp_reference"),
-                ),
-            )
-            if section
-        )
-    sections = "\n\n".join(
-        section.strip()
-        for section in (
-            documentation_section,
-            function_blocks,
-            context_sections,
-            platform_section,
-            policy_fallback,
-            legal_section,
-        )
-        if section.strip()
-    )
-    if sections:
-        sections = f"\n\n{sections}\n"
-    append_sections(cwd / "README.md", sections)
 
 
 def update_public_context(ctx, cwd):
@@ -524,4 +485,5 @@ def update_public_context(ctx, cwd):
     update_release_references(ctx, cwd)
     update_policy_references(ctx, cwd)
     update_legal(ctx, cwd)
+    attach_repository_documentation(ctx, cwd)
     update_readme(ctx, cwd)
