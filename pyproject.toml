@@ -34,9 +34,9 @@ mkdocs-get-deps = "^0.2.0"
 pyyaml = "^6.0.2"
 mkdocs = "^1.6.1"
 sphinx = ">=8,<9"
-myst-parser = ">=4,<5"
+myst-parser = ">=5.1.0,<6"
 sphinx-book-theme = ">=1,<2"
-mkdocstrings = {version = ">=0.30,<1", extras = ["python"]}
+mkdocstrings = {version = ">=1.0.6,<2", extras = ["python"]}
 zensical = "^0.0.57"
 
 
