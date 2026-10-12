@@ -1,6 +1,6 @@
 [project]
-name = "lumc-research-software-templates"
-version = "0.1.0"
+name = "rs-repo-templates"
+version = "1.0.0"
 description = "Service-agnostic Copier templates for FAIR research software."
 readme = "README.md"
 license = "Apache-2.0"
@@ -28,7 +28,8 @@ maintainers = [
 dependencies = [
     "packaging>=24,<27",
     "rsm-schema>=1.0.0,<2.0",
-    "rs-files-templates @ git+https://github.com/LUMC-DCC/rs-files-templates.git@c4b5241eccbcc6af19a0cae60e324c01ea0e69a6",
+    "rs-files-templates (>=1.0.0,<2.0.0)",
+    "rs-metadata (>=1.0.0,<2.0.0)",
 ]
 
 [project.urls]
