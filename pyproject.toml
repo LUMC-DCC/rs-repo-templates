@@ -1,6 +1,6 @@
 [project]
 name = "lumc-research-software-templates"
-version = "0.1.0"
+version = "1.0.0"
 description = "Service-agnostic Copier templates for FAIR research software."
 readme = "README.md"
 license = "Apache-2.0"
