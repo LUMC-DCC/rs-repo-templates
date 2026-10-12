@@ -1,4 +1,4 @@
-"""Audit external GitHub Action references for immutable commit pins."""
+"""Audit external GitHub Action references for explicit release versions."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ USES_PATTERN = re.compile(
     r"^\s*(?:-\s*)?uses:\s*[\"']?([^@\s\"']+)@([^#\s\"']+)",
     re.MULTILINE,
 )
-COMMIT_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+VERSION_PATTERN = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 IGNORED_DIRECTORIES = {".git", ".venv", "site"}
 
 
@@ -39,7 +39,7 @@ def workflow_files(root: Path) -> list[Path]:
 
 
 def unpinned_references(path: Path) -> list[tuple[str, str]]:
-    """Return external action references without full commit pins.
+    """Return external action references without release versions.
 
     Parameters
     ----------
@@ -55,7 +55,7 @@ def unpinned_references(path: Path) -> list[tuple[str, str]]:
     return [
         (action, reference)
         for action, reference in USES_PATTERN.findall(content)
-        if not action.startswith("./") and not COMMIT_PATTERN.fullmatch(reference)
+        if not action.startswith("./") and not VERSION_PATTERN.fullmatch(reference)
     ]
 
 
@@ -77,7 +77,7 @@ def audit(root: Path) -> list[str]:
         for action, reference in unpinned_references(path):
             failures.append(
                 f"{path.relative_to(root)}: {action}@{reference} is not pinned to "
-                "a full commit SHA"
+                "an explicit release version (for example v7 or v1.2.3)"
             )
     return failures
 
@@ -91,7 +91,7 @@ def main() -> None:
     failures = audit(args.root.resolve())
     if failures:
         raise SystemExit("\n".join(failures))
-    print("[actions] All external actions use immutable commit pins.")
+    print("[actions] All external actions use release versions.")
 
 
 if __name__ == "__main__":
