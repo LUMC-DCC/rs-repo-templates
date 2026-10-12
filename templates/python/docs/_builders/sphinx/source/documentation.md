@@ -12,7 +12,7 @@ Build the HTML documentation:
 @@DOCS_BUILD@@
 ```
 
-The generated `docs/Makefile` and `docs/make.bat` expose the same Sphinx targets
+The `docs/Makefile` and `docs/make.bat` expose the same Sphinx targets
 for environments where `make` or a Windows command prompt is preferred.
 
 On Unix-like systems:

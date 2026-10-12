@@ -12,5 +12,5 @@ Build without opening a browser:
 @@DOCS_BUILD@@
 ```
 
-The generated website is written to `@@DOCS_OUTPUT@@`. Narrative project documentation
+The website is written to `@@DOCS_OUTPUT@@`. Narrative project documentation
 remains under `docs/` so it can also be read directly in the repository.

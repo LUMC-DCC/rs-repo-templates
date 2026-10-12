@@ -3,7 +3,7 @@
 {{ project_short_description }}
 
 The package website is built with pkgdown. Narrative project documentation is
-kept in this directory; the generated site contains the package reference,
+kept in this directory; the site contains the package reference,
 README, changelog, and links from `DESCRIPTION`.
 
 ## Contents

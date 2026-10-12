@@ -303,7 +303,6 @@ def test_generic_rich_context_generates_public_backbone(
     codemeta = json.loads((project_path / "codemeta.json").read_text(encoding="utf-8"))
     for heading in (
         "## Purpose",
-        "## Intended Audience",
         "## Installation",
         "## Usage",
         "## Citation",

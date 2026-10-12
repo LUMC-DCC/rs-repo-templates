@@ -87,8 +87,16 @@ maintainers = [
 {% set _ = runtime_dependencies.append("pydantic-settings") %}
 {% endif %}
 dependencies = {{ runtime_dependencies | tojson }}
-{% if keywords.entries %}
-keywords = {{ keywords.entries | tojson }}
+{% set metadata_keywords = keywords.entries | list %}
+{% set seen_keywords = keywords.entries | map('lower') | list %}
+{% for topic in topics.entries %}
+{% if topic.term and topic.term | lower not in seen_keywords %}
+{% set _ = metadata_keywords.append(topic.term) %}
+{% set _ = seen_keywords.append(topic.term | lower) %}
+{% endif %}
+{% endfor %}
+{% if metadata_keywords %}
+keywords = {{ metadata_keywords | tojson }}
 {% endif %}
 {% set os_classifiers = ["Programming Language :: Python :: 3"] %}
 {% for operating_system in operating_systems.entries %}

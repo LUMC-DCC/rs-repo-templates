@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install documentation dependencies
@@ -32,3 +32,33 @@ jobs:
 {% elif effective_documentation_builder == "sphinx" %}
         run: sphinx-build -W -b html docs/source docs/build/html
 {% endif %}
+      - name: Upload Pages artifact
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && !github.event.repository.private
+        uses: actions/upload-pages-artifact@v4
+        with:
+{% if effective_documentation_builder == "sphinx" %}
+          path: docs/build/html
+{% else %}
+          path: site
+{% endif %}
+
+  deploy:
+    name: Deploy documentation
+    if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch && !github.event.repository.private
+    needs: docs
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ '{{' }} steps.deployment.outputs.page_url {{ '}}' }}
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

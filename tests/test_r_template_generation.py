@@ -16,7 +16,7 @@ from copier import run_copy
 
 ROOT = Path(__file__).resolve().parents[1]
 COPIER_SOURCE = ROOT
-COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+ACTION_VERSION_PATTERN = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 
 R_CONTEXT = {
     "project_name": "Research Tools",
@@ -430,10 +430,18 @@ def test_r_workflows_are_valid_and_actions_are_pinned(
         parsed = yaml.safe_load(workflow.read_text(encoding="utf-8"))
         assert "jobs" in parsed
         for match in re.finditer(r"uses:\s+[^\s@]+@([^\s#]+)", workflow.read_text()):
-            assert COMMIT_SHA_PATTERN.fullmatch(match.group(1)), workflow
+            assert ACTION_VERSION_PATTERN.fullmatch(match.group(1)), workflow
 
     tests = yaml.safe_load((project / ".github/workflows/tests.yml").read_text())
     assert tests["jobs"]["check"]["strategy"]["matrix"]["os"] == [
         "ubuntu-latest",
         "macos-latest",
     ]
+    docs = yaml.safe_load((project / ".github/workflows/docs.yml").read_text())
+    upload = next(
+        step
+        for step in docs["jobs"]["docs"]["steps"]
+        if step.get("uses", "").startswith("actions/upload-pages-artifact@")
+    )
+    assert upload["with"]["path"] == "site"
+    assert docs["jobs"]["deploy"]["needs"] == "docs"
