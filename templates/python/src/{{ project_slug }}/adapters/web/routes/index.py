@@ -9,7 +9,6 @@ from fastapi.responses import HTMLResponse
 
 from {{ project_slug }}.adapters.web.views import render_index
 
-
 router = APIRouter(tags=["web"])
 
 

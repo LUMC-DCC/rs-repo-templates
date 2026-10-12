@@ -48,10 +48,10 @@ jobs:
           - Containerfile
 {% endif %}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
       - name: Build image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ '{{' }} matrix.file {{ '}}' }}
@@ -65,7 +65,7 @@ jobs:
     env:
       APPTAINER_VERSION: "1.5.3"
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@v7
       - name: Install Apptainer
         run: |
           curl --fail --location --silent --show-error \
@@ -89,24 +89,24 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
       - name: Log in to GHCR
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ '{{' }} github.actor {{ '}}' }}
           password: ${{ '{{' }} secrets.GITHUB_TOKEN {{ '}}' }}
       - name: Create image tags and labels
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ '{{' }} github.repository {{ '}}' }}
           tags: |
             type=ref,event=tag
             type=raw,value=latest
       - name: Build and publish image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: {{ primary_oci_file }}
@@ -122,23 +122,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v3
       - name: Log in to Docker Hub
-        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        uses: docker/login-action@v3
         with:
           username: ${{ '{{' }} secrets.DOCKERHUB_USERNAME {{ '}}' }}
           password: ${{ '{{' }} secrets.DOCKERHUB_TOKEN {{ '}}' }}
       - name: Create image tags and labels
         id: meta
-        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        uses: docker/metadata-action@v5
         with:
           images: ${{ '{{' }} secrets.DOCKERHUB_USERNAME {{ '}}' }}/{{ project_slug | replace('_', '-') }}
           tags: |
             type=ref,event=tag
             type=raw,value=latest
       - name: Build and publish image
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: {{ primary_oci_file }}

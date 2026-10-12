@@ -8,6 +8,7 @@ before publishing the ontology.
 from rdflib import Namespace
 from rdflib.namespace import OWL, RDF, RDFS
 
+__all__ = ["BASE_IRI", "EX", "OWL", "RDF", "RDFS"]
 
 # Use a project-specific base IRI so generated ontology terms do not collide
 # with terms from other projects.

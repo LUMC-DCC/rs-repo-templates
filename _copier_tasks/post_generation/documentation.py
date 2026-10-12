@@ -229,7 +229,7 @@ def _python_architecture(ctx):
     lines = [
         "## Project architecture",
         "",
-        "The generated Python package uses a `src` layout.",
+        "The Python package uses a `src` layout.",
         "Runtime dependencies point inward: public entry points delegate reusable",
         "behavior to the service layer.",
         "",
@@ -249,7 +249,7 @@ def _python_architecture(ctx):
             "",
             "Services must not import interface adapters.",
             "",
-            "Generated component paths:",
+            "Component paths:",
             f"- `src/{slug}/services/`",
         ]
     )
@@ -271,7 +271,7 @@ def _python_architecture(ctx):
                 "",
                 f"### {interface_type}",
                 "",
-                "See the generated component paths above.",
+                "See the component paths above.",
             ]
         )
     return "\n".join(lines)
@@ -301,7 +301,7 @@ def _python_deployment(ctx):
             [
                 "## HTTP service",
                 "",
-                "Run the generated composed application with:",
+                "Run the composed application with:",
                 "",
                 "```bash",
                 f"{command}-serve",
@@ -318,11 +318,9 @@ def _python_deployment(ctx):
             ]
         )
     if interface_types & {"Web application", "Workbench"}:
-        lines.extend(
-            ["", "## Web application", "", "Configure the generated web adapter."]
-        )
+        lines.extend(["", "## Web application", "", "Configure the web adapter."])
     if interface_types & {"Bioinformatics portal", "Database portal"}:
-        lines.extend(["", "## Portal", "", "Configure the generated portal adapter."])
+        lines.extend(["", "## Portal", "", "Configure the portal adapter."])
     return "\n".join(lines)
 
 
@@ -354,7 +352,7 @@ def _python_usage(ctx):
     }
     commands = []
     if "Command-line tool" in interface_types:
-        commands.append(f'{command} process "example input"')
+        commands.append(f'{run_prefix}{command} process "example input"')
     if interface_types & {
         "Bioinformatics portal",
         "Database portal",
@@ -369,7 +367,7 @@ def _python_usage(ctx):
         commands.append(f'{run_prefix}python scripts/run_example.py "example input"')
     if not commands:
         return ""
-    return "## Generated entry points\n\n```bash\n" + "\n".join(commands) + "\n```"
+    return "## Entry points\n\n```bash\n" + "\n".join(commands) + "\n```"
 
 
 def attach_repository_documentation(ctx, cwd):
@@ -387,10 +385,19 @@ def attach_repository_documentation(ctx, cwd):
     workflow_dir = cwd / ".github" / "workflows"
     workflows = sorted(path.name for path in workflow_dir.glob("*.yml"))
     if workflows:
-        section = "## Generated automation\n\n" + "\n".join(
-            f"- `{name}`" for name in workflows
-        )
+        section = "## Automation\n\n" + "\n".join(f"- `{name}`" for name in workflows)
         _append(source_dir / "developer.md", section)
+    if (workflow_dir / "docs.yml").exists():
+        _append(
+            source_dir / "developer.md",
+            "## Documentation publishing\n\n"
+            "The documentation workflow builds on pushes and pull requests, "
+            "and deploys to GitHub Pages only from the default branch. "
+            "In repository Settings → Pages, select **GitHub Actions** as the "
+            "build source before the first deployment. Repositories created "
+            "directly through RS Tools configure this automatically when "
+            "GitHub Pages is available for the account.",
+        )
 
     if ctx.get("_template_name") == "python":
         setup = setup_group_command(ctx, "docs")

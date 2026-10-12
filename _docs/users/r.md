@@ -51,10 +51,13 @@ type-checker option.
 
 ## Documentation
 
-Selecting pkgdown adds `_pkgdown.yml` and a pinned documentation workflow. The
+Selecting pkgdown adds `_pkgdown.yml` and a documentation deployment workflow. The
 site is written to `site/`, leaving narrative project pages under `docs/`
 available for repository rendering and future template updates. With no builder,
 the selected pages remain plain Markdown and no docs workflow is generated.
+Public repositories deploy the site to GitHub Pages on default-branch pushes;
+pull requests only build it. Select **GitHub Actions** in Settings → Pages before
+the first deployment when creating the repository manually.
 
 ## Containers and releases
 

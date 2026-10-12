@@ -79,8 +79,9 @@ integrated and remains compatible with RSM.
 ## Generator dependencies
 
 `rsm-schema` and `rs-files-templates` are generator dependencies, not
-generated-project dependencies. Their declarations follow upstream `main`
-during development; `poetry.lock` records the exact revisions tested by CI.
+generated-project dependencies. The schema and metadata validator use published
+1.x packages; the reusable-file renderer is pinned to a tested Git revision.
+`poetry.lock` records the exact versions tested by CI.
 They are imported only by source-side finalization and do not appear in
 generated package manifests.
 
@@ -126,8 +127,8 @@ conflicts cannot be committed accidentally.
 
 ## Verification
 
-CI checks every derived artifact and generator dependency, audits immutable
-GitHub Action pins, runs repository quality checks, renders representative
+CI checks every derived artifact and generator dependency, audits explicit
+GitHub Action release versions, runs repository quality checks, renders representative
 projects, verifies tagged Copier updates, runs generated tests, builds every
 generic, Python, and R documentation variant, and builds this repository's
 docs strictly.

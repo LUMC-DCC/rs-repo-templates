@@ -24,6 +24,13 @@ def configure_python_runtime(ctx, cwd):
         return
 
     version = container_python_version(cwd)
+    pyproject = cwd / "pyproject.toml"
+    lines = []
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
+        if line.startswith("[") and lines and lines[-1].strip():
+            lines.append("")
+        lines.append(line)
+    pyproject.write_text("\n".join(lines) + "\n", encoding="utf-8")
     for relative_path in CONTAINER_PATHS:
         path = cwd / relative_path
         if not path.exists():

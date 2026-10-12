@@ -1,3 +1,4 @@
+{% filter trim %}
 """Integration tests for generated interface adapters."""
 
 {% set interface_types = namespace(values=[]) %}
@@ -27,8 +28,10 @@ from pathlib import Path
 from wsgiref.util import setup_testing_defaults
 
 {% endif %}
+{% if has_cli or has_api or has_soap or has_portal or has_web or has_ontology %}
 import pytest
 
+{% endif %}
 from {{ project_slug }}.services.processing import process_text
 
 
@@ -241,3 +244,4 @@ def test_example_script_can_run_without_cli_process():
 
     assert module.process_text("abc").output_text == "ABC"
 {% endif %}
+{% endfilter %}{{ "\n" -}}

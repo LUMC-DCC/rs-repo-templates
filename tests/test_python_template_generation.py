@@ -23,7 +23,7 @@ from rs_metadata.vocabulary import cff_schema
 ROOT = Path(__file__).resolve().parents[1]
 COPIER_SOURCE = ROOT
 SPDX_LICENSE_TEXT = "MIT License\n\nPermission is hereby granted for testing."
-COMMIT_SHA_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+ACTION_VERSION_PATTERN = re.compile(r"^v\d+(?:\.\d+){0,2}$")
 
 BASE_CONTEXT = {
     "project_name": "Research Template Demo",
@@ -631,7 +631,7 @@ def assert_no_template_artifacts(project_path):
 
 
 def assert_external_actions_are_pinned(project_path):
-    """Assert generated workflow actions use immutable commit references.
+    """Assert workflow actions use explicit release versions.
 
     Parameters
     ----------
@@ -645,7 +645,7 @@ def assert_external_actions_are_pinned(project_path):
             content,
         ):
             if not action.startswith("./"):
-                assert COMMIT_SHA_PATTERN.fullmatch(reference), (
+                assert ACTION_VERSION_PATTERN.fullmatch(reference), (
                     path,
                     action,
                     reference,
@@ -988,7 +988,10 @@ def test_python_template_generates_expected_option_sets(
         "project_short_description",
         BASE_CONTEXT["project_short_description"],
     )
-    assert metadata["project"]["keywords"] == BASE_CONTEXT["keywords"]["entries"]
+    assert metadata["project"]["keywords"] == [
+        *BASE_CONTEXT["keywords"]["entries"],
+        "Proteomics",
+    ]
     assert metadata["project"]["classifiers"] == [
         "Programming Language :: Python :: 3",
         "Operating System :: POSIX :: Linux",
@@ -3025,10 +3028,7 @@ def test_python_shared_community_files_render_standard_content(tmp_path, monkeyp
         project_path / ".github" / "workflows" / "changelog.yml"
     ).read_text(encoding="utf-8")
     assert "Validate research software metadata" in metadata_workflow
-    assert (
-        "LUMC-DCC/rs-metadata@27f3da06c4bae5f735c492608b5ffea6c2715c21"
-        in metadata_workflow
-    )
+    assert "LUMC-DCC/rs-metadata@v1" in metadata_workflow
     assert "Check changelog format" in changelog_workflow
     assert "python tools/check_changelog.py" in changelog_workflow
     assert "Maintainers hand over active work" in governance
@@ -3251,12 +3251,12 @@ def test_project_name_renders_in_python_public_surfaces(tmp_path, monkeypatch):
     assert readme.startswith("# Specific Project Name")
     assert "Repository:" not in readme
     assert f"Homepage: {BASE_CONTEXT['urls']['homepage']}" in readme
-    assert f"Documentation: {BASE_CONTEXT['urls']['documentation']}" in readme
+    assert f"[project documentation]({BASE_CONTEXT['urls']['documentation']})" in readme
     assert (
-        "Publication: [Research Template Demo: reusable software scaffolds]"
+        "Associated publication: [Research Template Demo: reusable software scaffolds]"
         "(https://doi.org/10.1234/example)"
     ) in readme
-    assert readme.index("Publication:") < readme.index("Homepage:")
+    assert readme.index("## Citation") > readme.index("## Development")
     assert docs_landing.startswith("# Specific Project Name")
     assert '"""Public Python package for Specific Project Name.' in package_init
     assert citation["title"] == "Specific Project Name"
@@ -3371,7 +3371,7 @@ def test_project_context_renders_in_python_readme_docs_and_metadata(
 
     for content in (readme, docs_overview):
         assert (
-            "Publication: [Research Template Demo: reusable software scaffolds]"
+            "[Research Template Demo: reusable software scaffolds]"
             "(https://doi.org/10.1234/example)"
         ) in content
         assert "## Purpose" in content
@@ -3574,7 +3574,7 @@ def test_python_template_generates_codemeta_metadata(tmp_path, monkeypatch):
         },
     ]
     assert codemeta["funding"] == ["LUMC-2024-001", "HRI-RS-2", "RS-002"]
-    assert codemeta["keywords"] == ["research-software", "template"]
+    assert codemeta["keywords"] == ["research-software", "template", "Proteomics"]
     assert codemeta["relatedLink"] == [
         "https://snakemake.readthedocs.io",
         "https://www.researchobject.org/ro-crate/",
@@ -3811,7 +3811,7 @@ def test_python_template_generates_citation_metadata(tmp_path, monkeypatch):
         "https://github.com/LUMC-DCC/research-template-demo"
     )
     assert citation["url"] == "https://example.org/research-template-demo"
-    assert citation["keywords"] == ["research-software", "template"]
+    assert citation["keywords"] == ["research-software", "template", "Proteomics"]
     assert citation["authors"] == [
         {
             "family-names": "Lovelace",
@@ -3945,3 +3945,119 @@ def test_generated_python_project_tests_pass(tmp_path, monkeypatch):
     )
 
     assert result.returncode == 0, result.stdout + result.stderr
+
+
+@pytest.mark.parametrize(
+    "interface_types",
+    [
+        None,
+        ["Command-line tool"],
+        ["Library"],
+        ["Workflow", "Script"],
+        ["Desktop application"],
+        ["Plug-in"],
+        ["Suite"],
+        ["Ontology"],
+        ["Web API"],
+        ["SPARQL endpoint"],
+        ["Web service"],
+        ["Web application"],
+        ["Bioinformatics portal"],
+        ["Database portal"],
+        ["Workbench"],
+    ],
+)
+def test_fresh_python_scaffold_passes_its_quality_workflow(
+    tmp_path,
+    monkeypatch,
+    interface_types,
+):
+    """A freshly rendered project must pass the checks its CI enables."""
+    overrides = (
+        {}
+        if interface_types is None
+        else {
+            "interfaces": {"entries": [{"type": value} for value in interface_types]},
+        }
+    )
+    project = render_python_project(tmp_path, monkeypatch, **overrides)
+    for arguments in (["check", "."], ["format", "--check", "."]):
+        result = subprocess.run(
+            [str(Path(sys.executable).with_name("ruff")), *arguments],
+            cwd=project,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_public_project_documents_selected_capabilities(tmp_path, monkeypatch):
+    """README spacing and documentation must reflect the actual project choices."""
+    project = render_python_project(
+        tmp_path,
+        monkeypatch,
+        project_manager="poetry",
+        project_short_description="Research software template demo.",
+        community_files={"entries": []},
+        topics={"entries": [{"term": "Proteomics"}, {"term": "Genomics"}]},
+    )
+    readme = (project / "README.md").read_text()
+    assert "- Proteomics\n- Genomics\n" in readme
+    badge_lines = readme.split("\n\n")
+    assert all(
+        "\n" not in paragraph
+        for paragraph in badge_lines
+        if paragraph.startswith("[![")
+    )
+    assert "poetry add research-template-demo" in readme
+    assert "python -m pip install research-template-demo" not in readme
+    assert (
+        readme.index("## Development")
+        < readme.index("## Citation")
+        < readme.index("## Legal")
+    )
+    for name in ("developer.md", "usage.md", "release.md"):
+        text = (project / "docs" / name).read_text()
+        assert "CHANGELOG.md" not in text
+        assert "generated" not in text.lower()
+    lines = (project / "pyproject.toml").read_text().splitlines()
+    assert all(
+        index == 0 or not lines[index - 1].strip()
+        for index, line in enumerate(lines)
+        if line.startswith("[")
+    )
+
+
+@pytest.mark.parametrize(
+    ("builder", "output"),
+    [
+        ("mkdocs", "site"),
+        ("zensical", "site"),
+        ("sphinx", "docs/build/html"),
+    ],
+)
+def test_documentation_workflow_deploys_only_public_default_branch(
+    tmp_path,
+    monkeypatch,
+    builder,
+    output,
+):
+    """Pull requests build docs; only public default-branch pushes publish them."""
+    project = render_python_project(
+        tmp_path, monkeypatch, documentation_builder=builder
+    )
+    workflow = yaml.safe_load((project / ".github/workflows/docs.yml").read_text())
+    jobs = workflow["jobs"]
+    upload = next(
+        step
+        for step in jobs["docs"]["steps"]
+        if step.get("uses", "").startswith("actions/upload-pages-artifact@")
+    )
+    assert upload["with"]["path"] == output
+    assert upload["if"] == jobs["deploy"]["if"]
+    assert "github.event_name == 'push'" in upload["if"]
+    assert "github.event.repository.default_branch" in upload["if"]
+    assert "!github.event.repository.private" in upload["if"]
+    assert jobs["deploy"]["needs"] == "docs"
+    assert jobs["deploy"]["permissions"] == {"pages": "write", "id-token": "write"}

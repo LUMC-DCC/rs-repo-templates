@@ -24,6 +24,13 @@ from {{ project_slug }}.logging_config import configure_logging
 # The Typer app is the command registry. Add new commands by importing their
 # modules and registering them below.
 app = typer.Typer(help="{{ project_short_description }}")
+
+
+@app.callback()
+def root() -> None:
+    """Run the application's subcommands."""
+
+
 app.command(name="process")(process.command)
 
 
