@@ -45,7 +45,7 @@ def shields_badge_url(label, message, color="blue", label_color="gray"):
         str
             Escaped path segment.
         """
-        return quote(value.replace("-", "--"), safe="")
+        return quote(value.replace("_", "__").replace("-", "--"), safe="")
 
     return (
         "https://img.shields.io/badge/"
@@ -207,13 +207,34 @@ def first_doi(ctx):
         for prefix in (
             "https://doi.org/",
             "http://doi.org/",
+            "https://dx.doi.org/",
             "http://dx.doi.org/",
             "doi:",
         ):
             if value.lower().startswith(prefix):
                 value = value[len(prefix) :]
                 break
-        return value
+        if value:
+            return value
+    return ""
+
+
+def biotools_identifier(ctx):
+    """Resolve a supplied bio.tools ID, CURIE, or entry URL to its identifier."""
+    for registry in entries(ctx, "registries"):
+        name = re.sub(r"[^a-z]", "", str(registry.get("name", "")).lower())
+        if name != "biotools":
+            continue
+        value = str(registry.get("url_or_id") or "").strip().rstrip("/")
+        if "://" in value:
+            parsed = urlparse(value)
+            if parsed.scheme not in {"http", "https"} or parsed.hostname != "bio.tools":
+                continue
+            value = re.sub(r"^(?:tool|t)/", "", parsed.path.lstrip("/"))
+        else:
+            value = re.sub(r"^biotools:", "", value, flags=re.IGNORECASE)
+        if re.fullmatch(r"[-.0-9A-Z_a-z]+", value):
+            return value
     return ""
 
 
@@ -327,6 +348,22 @@ def build_readme_badges(ctx, cwd=None):
                 doi_badge_url,
                 f"https://doi.org/{quote(doi, safe='/')}",
             )
+        )
+
+    biotools_id = biotools_identifier(ctx)
+    if biotools_id:
+        badges.append(
+            markdown_badge(
+                "bio.tools",
+                shields_badge_url("bio.tools", biotools_id),
+                f"https://bio.tools/{biotools_id}",
+            )
+        )
+
+    license_url = repository_file_url(ctx, cwd, "LICENSE.md", "LICENSE", "LICENSE.txt")
+    if license_url:
+        badges.append(
+            markdown_badge("License", shields_badge_url("license", "view"), license_url)
         )
 
     interface_types = interface_type_values(entries(ctx, "interfaces"))

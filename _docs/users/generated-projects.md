@@ -18,7 +18,7 @@ After generation, review the project in this order:
 
 `README.md` is the quick front door for the project. Its generated standard
 sections always explain the purpose, intended audience, installation, usage,
-citation, and support path. When available, it also includes verified badges,
+citation, and support path. When available, it also includes metadata-driven badges,
 access terms, platform support, licensing, documentation, and contributor setup.
 Prefer longer project background and scope in `docs/overview.md`. When software
 functions are provided, the README includes collapsible `biotools-function`
@@ -34,6 +34,21 @@ a documentation site is deployed. GitHub repositories use a source-file URL so
 the link also works when the README is embedded in a documentation site;
 other hosts use a repository-relative link. No usage badge appears if that
 guide was not selected or is missing.
+
+Additional badges use the supplied metadata and existing files:
+
+- **bio.tools** links to the entry given in `registries.entries[].url_or_id` for
+  bio.tools. Supply an entry ID, `biotools:` CURIE, or bio.tools URL; selecting
+  the registry without an ID or URL does not create a badge.
+- **DOI** links to the DOI in `persistent_identifiers`. Zenodo DOIs use Zenodo's
+  DOI badge; other DOIs use a static DOI badge. Selecting Zenodo as a
+  distribution channel alone does not create a DOI or badge. Add the assigned
+  DOI to the project metadata after depositing the software.
+- **license: view** links to the existing license file, preferring `LICENSE.md`
+  over `LICENSE` for R packages where the latter may contain only license fields.
+
+The template does not check whether external entries or documentation sites
+are already online. Keep their identifiers and URLs up to date in the metadata.
 
 Add durable project-specific README prose below the
 `<!-- rs-files-templates:README:end -->` marker. Template updates regenerate the
