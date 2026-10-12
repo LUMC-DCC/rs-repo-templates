@@ -1,5 +1,5 @@
 [project]
-name = "lumc-research-software-templates"
+name = "rs-repo-templates"
 version = "1.0.0"
 description = "Service-agnostic Copier templates for FAIR research software."
 readme = "README.md"
@@ -29,6 +29,7 @@ dependencies = [
     "packaging>=24,<27",
     "rsm-schema>=1.0.0,<2.0",
     "rs-files-templates (>=1.0.0,<2.0.0)",
+    "rs-metadata (>=1.0.0,<2.0.0)",
 ]
 
 [project.urls]
