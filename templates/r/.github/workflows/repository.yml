@@ -17,14 +17,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@v7
 {% set effective_formatter = quality_tools.formatter if quality_tools.formatter in template_supported_choices.quality_tools.formatter else "" %}
 {% set effective_linter = quality_tools.linter if quality_tools.linter in template_supported_choices.quality_tools.linter else "" %}
-{% if effective_formatter or effective_linter %}      - uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
-      - uses: r-lib/actions/setup-r-dependencies@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+{% if effective_formatter or effective_linter %}      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           needs: check
-{% endif %}      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+{% endif %}      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Install repository checks

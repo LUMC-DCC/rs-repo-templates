@@ -179,7 +179,10 @@ When `CHANGELOG.md` is included, the Python template also includes
 `changelog.yml` workflow.
 
 Python documentation and tests use purpose-specific workflows. `docs.yml` builds
-the selected Python documentation scaffold when it has a builder, and
+the selected Python documentation scaffold when it has a builder, deploys public
+sites to GitHub Pages on default-branch pushes, and builds pull requests without
+publishing them. Select **GitHub Actions** in Settings → Pages before the first
+deployment when creating a repository manually. The
 `tests.yml` runs pytest when tests are included. Selected `test_types` control
 which sample test files are generated. The Python scaffold provides pytest samples
 for smoke, doctest, unit, integration, system, regression, and property-based
@@ -203,7 +206,7 @@ organization, and repository links from CodeMeta. Sphinx prefers installed
 package metadata for the version and uses CodeMeta when building directly from
 a source checkout. Documentation CI validates the resulting build.
 
-Generated workflows pin third-party actions to immutable commits. Dependabot
+Workflows use explicit third-party action release versions. Dependabot
 checks those actions and Python project dependencies weekly and proposes updates
 through pull requests.
 

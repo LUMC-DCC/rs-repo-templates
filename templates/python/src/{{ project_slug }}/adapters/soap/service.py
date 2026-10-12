@@ -31,4 +31,3 @@ class ProcessingService(ServiceBase):
         # Keep SOAP serialization here and reusable behavior in the service.
         del ctx
         return process_text(text).output_text
-

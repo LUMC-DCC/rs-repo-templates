@@ -7,11 +7,11 @@ test, document, and connect to workflow engines such as CWL or Snakemake later.
 
 from dataclasses import dataclass, field
 
-from {{ project_slug }}.workflows.config import WorkflowConfig
 from {{ project_slug }}.services.processing import (
     ProcessingResult,
     process_text,
 )
+from {{ project_slug }}.workflows.config import WorkflowConfig
 
 
 @dataclass(frozen=True)

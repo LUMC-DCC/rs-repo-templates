@@ -184,16 +184,22 @@ def build_release_page(ctx):
             "## Release process",
             "",
             f"1. Update `{version_field}` in `{version_file}`.",
-            "2. Move completed entries from `Unreleased` in `CHANGELOG.md` into a "
-            "section for the new version.",
-            "3. Run the metadata, test, documentation, and release checks configured "
+            *(
+                [
+                    "1. Move completed entries from `Unreleased` in `CHANGELOG.md` "
+                    "into a section for the new version."
+                ]
+                if "CHANGELOG.md" in entries(ctx, "community_files")
+                else []
+            ),
+            "1. Run the metadata, test, documentation, and release checks configured "
             "for the project.",
         ]
     )
     if has_python_distribution(channels):
         lines.extend(
             [
-                "4. Create and push a `v<version>` tag. The distribution workflow "
+                "1. Create and push a `v<version>` tag. The distribution workflow "
                 "checks that the tag matches `project.version` before publishing.",
                 "",
                 "Run the release check locally with:",
@@ -207,7 +213,7 @@ def build_release_page(ctx):
     elif template_name == "r" and has_r_distribution(channels):
         lines.extend(
             [
-                "4. Run `Rscript tools/check_release.R`, then create and push a "
+                "1. Run `Rscript tools/check_release.R`, then create and push a "
                 "`v<version>` tag after the source package passes `R CMD check`.",
                 "",
                 "Run the release checks locally with:",
@@ -229,7 +235,7 @@ def build_release_page(ctx):
         )
     if "cran" in normalized_channels:
         setup_notes.append(
-            "- **CRAN:** inspect the generated check results and submit the source "
+            "- **CRAN:** inspect the check results and submit the source "
             "package through CRAN's external submission process."
         )
     if "bioconductor" in normalized_channels:

@@ -11,7 +11,6 @@ from rdflib.query import Result
 
 from {{ project_slug }}.ontology.graph import ontology_graph
 
-
 router = APIRouter(tags=["sparql"])
 
 
@@ -54,10 +53,7 @@ def _select_response(result: Result) -> dict[str, object]:
     bindings = []
     for row in result:
         bindings.append(
-            {
-                variable: _binding(row[index])
-                for index, variable in enumerate(variables)
-            }
+            {variable: _binding(row[index]) for index, variable in enumerate(variables)}
         )
     return {"head": {"vars": variables}, "results": {"bindings": bindings}}
 

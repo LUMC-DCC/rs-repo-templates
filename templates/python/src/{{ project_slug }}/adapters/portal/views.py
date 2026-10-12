@@ -30,7 +30,7 @@ def render_index(summary: dict[str, object]) -> str:
     )
     return (
         "<!doctype html>"
-        "<html lang=\"en\">"
+        '<html lang="en">'
         "<head><title>{{ (project_name or project_slug) }} portal</title></head>"
         "<body>"
         "<main>"
