@@ -10,7 +10,6 @@ from fastapi.responses import HTMLResponse
 from {{ project_slug }}.adapters.portal.summary import portal_summary
 from {{ project_slug }}.adapters.portal.views import render_index
 
-
 router = APIRouter(tags=["portal"])
 
 

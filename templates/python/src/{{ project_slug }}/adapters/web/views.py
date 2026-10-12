@@ -26,7 +26,7 @@ def render_index(text: str = "{{ (project_name or project_slug) }}") -> str:
     result = process_text(text)
     return (
         "<!doctype html>"
-        "<html lang=\"en\">"
+        '<html lang="en">'
         "<head><title>{{ (project_name or project_slug) }}</title></head>"
         "<body>"
         "<main>"

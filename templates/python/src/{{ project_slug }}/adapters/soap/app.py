@@ -33,4 +33,3 @@ def create_wsgi_app() -> WsgiApplication:
 # Spyne is WSGI-native; this bridge lets the service run beside ASGI adapters.
 wsgi_app = create_wsgi_app()
 app = WSGIMiddleware(wsgi_app)
-

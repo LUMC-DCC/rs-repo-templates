@@ -3947,9 +3947,40 @@ def test_generated_python_project_tests_pass(tmp_path, monkeypatch):
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_fresh_python_scaffold_passes_its_quality_workflow(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "interface_types",
+    [
+        None,
+        ["Command-line tool"],
+        ["Library"],
+        ["Workflow", "Script"],
+        ["Desktop application"],
+        ["Plug-in"],
+        ["Suite"],
+        ["Ontology"],
+        ["Web API"],
+        ["SPARQL endpoint"],
+        ["Web service"],
+        ["Web application"],
+        ["Bioinformatics portal"],
+        ["Database portal"],
+        ["Workbench"],
+    ],
+)
+def test_fresh_python_scaffold_passes_its_quality_workflow(
+    tmp_path,
+    monkeypatch,
+    interface_types,
+):
     """A freshly rendered project must pass the checks its CI enables."""
-    project = render_python_project(tmp_path, monkeypatch)
+    overrides = (
+        {}
+        if interface_types is None
+        else {
+            "interfaces": {"entries": [{"type": value} for value in interface_types]},
+        }
+    )
+    project = render_python_project(tmp_path, monkeypatch, **overrides)
     for arguments in (["check", "."], ["format", "--check", "."]):
         result = subprocess.run(
             [str(Path(sys.executable).with_name("ruff")), *arguments],

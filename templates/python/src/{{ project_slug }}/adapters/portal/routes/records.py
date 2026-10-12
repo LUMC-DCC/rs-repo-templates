@@ -8,7 +8,6 @@ from fastapi import APIRouter
 
 from {{ project_slug }}.adapters.portal.summary import portal_summary
 
-
 router = APIRouter(tags=["portal"])
 
 
