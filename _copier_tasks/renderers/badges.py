@@ -4,6 +4,7 @@ import re
 from urllib.parse import quote, urlparse
 
 from renderers.community_files import selected_community_files
+from renderers.documentation_types import selected_documentation_types
 from renderers.project_context.interoperability import interface_type_values
 from utils.containerization import has_container_recipe
 from utils.context import entries, object_value, resolve_choice, resolve_object_choice
@@ -216,6 +217,27 @@ def first_doi(ctx):
     return ""
 
 
+def repository_file_url(ctx, cwd, *paths):
+    """Link to the first existing project file, without inventing a site route.
+
+    GitHub links also work when the README is embedded in a documentation site.
+    Other hosts use a repository-relative link.
+    """
+    if cwd is None:
+        return ""
+    for path in paths:
+        if (cwd / path).is_file():
+            github = github_repository(object_value(ctx, "urls", "repository"))
+            if github:
+                owner, repository = github
+                return (
+                    f"https://github.com/{owner}/{repository}/blob/HEAD/"
+                    f"{quote(path, safe='/')}"
+                )
+            return path
+    return ""
+
+
 def build_readme_badges(ctx, cwd=None):
     """Build README badges supported by supplied project metadata.
 
@@ -253,6 +275,15 @@ def build_readme_badges(ctx, cwd=None):
                 documentation_url,
             )
         )
+
+    if "user" in selected_documentation_types(entries(ctx, "documentation_types")):
+        usage_url = repository_file_url(
+            ctx, cwd, "docs/source/usage.md", "docs/usage.md"
+        )
+        if usage_url:
+            badges.append(
+                markdown_badge("Usage", shields_badge_url("usage", "guide"), usage_url)
+            )
 
     if github and "github releases" in channels:
         owner, repository = github
