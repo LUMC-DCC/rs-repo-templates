@@ -49,9 +49,9 @@ pre-commit = ">=4.2,<5.0"
 pytest = ">=9.1.1,<10.0"
 typer = ">=0.16,<1.0"
 rs-metadata = ">=1.0.0,<2.0"
-ruff = ">=0.16.4,<1.0"
+ruff = ">=0.16.10,<1.0"
 pydantic-settings = ">=2,<3"
-copier = ">=9.17.2,<10.0"
+copier = ">=9.18.2,<10.0"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs-material = ">=9.6.14,<10.0"
@@ -61,10 +61,10 @@ mkdocs-get-deps = ">=0.2.0,<0.3.0"
 pyyaml = ">=6.0.2,<7.0"
 mkdocs = ">=1.6.1,<2.0"
 sphinx = ">=8,<9"
-myst-parser = ">=4,<5"
+myst-parser = ">=5.1.0,<6"
 sphinx-book-theme = ">=1,<2"
-mkdocstrings = { version = ">=0.30,<1", extras = ["python"] }
-zensical = ">=0.0.57,<0.0.58"
+mkdocstrings = { version = ">=1.0.6,<2", extras = ["python"] }
+zensical = ">=0.0.69,<0.0.70"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
