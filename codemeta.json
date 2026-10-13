@@ -21,6 +21,17 @@
         "@id": "https://ror.org/05xvt9f17",
         "name": "Leiden University Medical Center"
       }
+    },
+    {
+      "@id": "https://orcid.org/0000-0002-9839-5439",
+      "@type": "Person",
+      "givenName": "Anna",
+      "familyName": "Niehues",
+      "affiliation": {
+        "@type": "Organization",
+        "@id": "https://ror.org/05xvt9f17",
+        "name": "Leiden University Medical Center"
+      }
     }
   ],
   "maintainer": [
