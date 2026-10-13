@@ -4,6 +4,7 @@ import re
 from urllib.parse import quote, urlparse
 
 from renderers.community_files import selected_community_files
+from renderers.documentation_types import selected_documentation_types
 from renderers.project_context.interoperability import interface_type_values
 from utils.containerization import has_container_recipe
 from utils.context import entries, object_value, resolve_choice, resolve_object_choice
@@ -44,7 +45,7 @@ def shields_badge_url(label, message, color="blue", label_color="gray"):
         str
             Escaped path segment.
         """
-        return quote(value.replace("-", "--"), safe="")
+        return quote(value.replace("_", "__").replace("-", "--"), safe="")
 
     return (
         "https://img.shields.io/badge/"
@@ -206,13 +207,55 @@ def first_doi(ctx):
         for prefix in (
             "https://doi.org/",
             "http://doi.org/",
+            "https://dx.doi.org/",
             "http://dx.doi.org/",
             "doi:",
         ):
             if value.lower().startswith(prefix):
                 value = value[len(prefix) :]
                 break
-        return value
+        if value:
+            return value
+    return ""
+
+
+def biotools_identifier(ctx):
+    """Resolve a supplied bio.tools ID, CURIE, or entry URL to its identifier."""
+    for registry in entries(ctx, "registries"):
+        name = re.sub(r"[^a-z]", "", str(registry.get("name", "")).lower())
+        if name != "biotools":
+            continue
+        value = str(registry.get("url_or_id") or "").strip().rstrip("/")
+        if "://" in value:
+            parsed = urlparse(value)
+            if parsed.scheme not in {"http", "https"} or parsed.hostname != "bio.tools":
+                continue
+            value = re.sub(r"^(?:tool|t)/", "", parsed.path.lstrip("/"))
+        else:
+            value = re.sub(r"^biotools:", "", value, flags=re.IGNORECASE)
+        if re.fullmatch(r"[-.0-9A-Z_a-z]+", value):
+            return value
+    return ""
+
+
+def repository_file_url(ctx, cwd, *paths):
+    """Link to the first existing project file, without inventing a site route.
+
+    GitHub links also work when the README is embedded in a documentation site.
+    Other hosts use a repository-relative link.
+    """
+    if cwd is None:
+        return ""
+    for path in paths:
+        if (cwd / path).is_file():
+            github = github_repository(object_value(ctx, "urls", "repository"))
+            if github:
+                owner, repository = github
+                return (
+                    f"https://github.com/{owner}/{repository}/blob/HEAD/"
+                    f"{quote(path, safe='/')}"
+                )
+            return path
     return ""
 
 
@@ -253,6 +296,15 @@ def build_readme_badges(ctx, cwd=None):
                 documentation_url,
             )
         )
+
+    if "user" in selected_documentation_types(entries(ctx, "documentation_types")):
+        usage_url = repository_file_url(
+            ctx, cwd, "docs/source/usage.md", "docs/usage.md"
+        )
+        if usage_url:
+            badges.append(
+                markdown_badge("Usage", shields_badge_url("usage", "guide"), usage_url)
+            )
 
     if github and "github releases" in channels:
         owner, repository = github
@@ -296,6 +348,22 @@ def build_readme_badges(ctx, cwd=None):
                 doi_badge_url,
                 f"https://doi.org/{quote(doi, safe='/')}",
             )
+        )
+
+    biotools_id = biotools_identifier(ctx)
+    if biotools_id:
+        badges.append(
+            markdown_badge(
+                "bio.tools",
+                shields_badge_url("bio.tools", biotools_id),
+                f"https://bio.tools/{biotools_id}",
+            )
+        )
+
+    license_url = repository_file_url(ctx, cwd, "LICENSE.md", "LICENSE", "LICENSE.txt")
+    if license_url:
+        badges.append(
+            markdown_badge("License", shields_badge_url("license", "view"), license_url)
         )
 
     interface_types = interface_type_values(entries(ctx, "interfaces"))

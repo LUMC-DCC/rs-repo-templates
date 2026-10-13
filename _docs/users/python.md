@@ -135,8 +135,10 @@ homepage, documentation, issues, changelog, release notes, downloads, and
 funding whenever the corresponding context is available.
 
 When the corresponding metadata is available, the README presents compact
-badges for the primary CI workflow, published documentation, GitHub releases,
-PyPI, the project DOI, and selected interface types.
+badges for the primary CI workflow, documentation site and usage guide, GitHub
+releases, PyPI, the project DOI (including Zenodo), bio.tools entry, license file,
+and selected interface types. See [generated projects](generated-projects.md)
+for the metadata and files needed for each additional badge.
 
 When `programming_languages` includes a Python entry with `version_constraint`,
 that value is used for `project.requires-python` in `pyproject.toml`.

@@ -1147,9 +1147,20 @@ def test_python_readme_badges_follow_available_project_metadata(
         "https://github.com/LUMC-DCC/research-template-demo/actions/workflows/tests.yml/badge.svg"
     ) in readme
     assert "![Documentation]" in readme
+    assert "![Usage]" in readme
+    assert (
+        "](https://github.com/LUMC-DCC/research-template-demo/blob/HEAD/docs/usage.md)"
+    ) in readme
     assert "img.shields.io/github/v/release/LUMC-DCC/research-template-demo" in readme
     assert "img.shields.io/pypi/v/research-template-demo" in readme
     assert "zenodo.org/badge/DOI/10.5281/zenodo.12345.svg" in readme
+    assert "![bio.tools]" in readme
+    assert "](https://bio.tools/research-template-demo)" in readme
+    assert "![License]" in readme
+    assert (
+        "](https://github.com/LUMC-DCC/research-template-demo/blob/HEAD/LICENSE)"
+        in readme
+    )
     assert "![Tool Type]" in readme
 
 
