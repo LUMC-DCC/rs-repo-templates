@@ -50,7 +50,7 @@ pre-commit = ">=4.2,<5.0"
 pytest = ">=9.1.1,<10.0"
 typer = ">=0.16,<1.0"
 rs-metadata = ">=1.0.0,<2.0"
-ruff = ">=0.16.10,<1.0"
+ruff = ">=0.17.0,<1.0"
 pydantic-settings = ">=2,<3"
 copier = ">=9.18.2,<10.0"
 
@@ -61,10 +61,10 @@ mkdocs-material-extensions = ">=1.3.1,<2.0"
 mkdocs-get-deps = ">=0.2.0,<0.3.0"
 pyyaml = ">=6.0.2,<7.0"
 mkdocs = ">=1.6.1,<2.0"
-sphinx = ">=8,<9"
+sphinx = ">=9.1.0,<10"
 myst-parser = ">=5.1.0,<6"
 sphinx-book-theme = ">=1,<2"
-mkdocstrings = { version = ">=1.0.6,<2", extras = ["python"] }
+mkdocstrings = { version = ">=1.0.7,<2", extras = ["python"] }
 zensical = ">=0.0.69,<0.0.70"
 
 [tool.pytest.ini_options]
