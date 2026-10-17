@@ -4015,7 +4015,7 @@ def test_public_project_documents_selected_capabilities(tmp_path, monkeypatch):
     )
     readme = (project / "README.md").read_text()
     assert "- Proteomics\n- Genomics\n" in readme
-    badge_lines = readme.split("\n\n")
+    badge_lines = readme.split("\n")
     assert all(
         "\n" not in paragraph
         for paragraph in badge_lines

@@ -448,7 +448,7 @@ def update_readme(ctx, cwd):
     model = model_from_context(ReadmeModel, ctx)
     validate_models([model])
     rendered = render_readme_text(model).rstrip()
-    badges = "\n\n".join(build_readme_badges(ctx, cwd))
+    badges = "\n".join(build_readme_badges(ctx, cwd))
     if badges:
         title, remainder = rendered.split("\n", 1)
         rendered = f"{title}\n\n{badges}\n\n{remainder.lstrip()}"
