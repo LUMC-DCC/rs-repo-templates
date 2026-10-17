@@ -9,6 +9,10 @@ authors:
     given-names: Mariia
     affiliation: Leiden University Medical Center
     orcid: https://orcid.org/0000-0002-0852-4752
+  - family-names: Niehues
+    given-names: Anna
+    affiliation: Leiden University Medical Center
+    orcid: https://orcid.org/0000-0002-9839-5439
 version: 1.0.0
 repository-code: https://github.com/LUMC-DCC/rs-repo-templates
 url: https://lumc-dcc.github.io/rs-repo-templates/
